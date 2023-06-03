@@ -1,0 +1,16 @@
+BasedOnStyle: Google
+AccessModifierOffset: -4
+AlignTrailingComments: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AlwaysBreakTemplateDeclarations: No
+BreakBeforeBraces: Attach
+ColumnLimit: 180
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+IncludeBlocks: Merge
+IndentPPDirectives: AfterHash
+IndentWidth: 4
+BreakBeforeBinaryOperators: All
+BreakBeforeTernaryOperators: true
+SpaceAfterCStyleCast: true
+SpaceBeforeRangeBasedForLoopColon: true
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
