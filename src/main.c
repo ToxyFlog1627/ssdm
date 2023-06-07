@@ -8,22 +8,24 @@ void login(const char *username, const char *password) { printf("Logging in \"%s
 int main(void) {
     show();
 
+    // TODO: can Ctrl-C or Ctrl-/ happen/affect anything in agetty?
     int running = 1;
     while (running) {
         int ch = getch();
-        // TODO: can Ctrl-C or Ctrl-/ happen/affect anything in agetty?
-        switch (ch) {
-            case '\n':
-            case KEY_ENTER:
-                const char *username = get_value(0), *password = get_value(1);
-                if (strlen(password)) login(username, password);
+        if (ch != KEY_ENTER && ch != '\n') {
+            handle_input(ch);
+            continue;
+        }
+
+        switch (login(get_value(I_USERNAME), get_value(I_PASSWORD))) {
                 break;
             default:
-                handle_input(ch);
+                exit(1);
                 break;
         }
     }
 
     close();
+
     return EXIT_SUCCESS;
 }

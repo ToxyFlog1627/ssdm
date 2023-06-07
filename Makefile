@@ -22,8 +22,8 @@ build/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 .PHONY: install
-install:
-	install -m755 ssdm $(INSTALL_LOC)
+install: all
+	install -m 755 ssdm /usr/bin/ssdm
 
 .PHONY: clean
 clean:

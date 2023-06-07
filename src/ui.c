@@ -24,7 +24,6 @@ typedef struct INPUT {
 
 INPUT inputs[INPUTS];
 int selected_input = 0;
-
 WINDOW *win;
 
 INPUT new_input(const char *text, int y, int x, int total_width) {
