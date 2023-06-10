@@ -7,6 +7,7 @@
 void open_ui(void);
 const char *get_value(int input);
 void handle_input(int ch);
+void show_message(const char *text);
 void close_ui(void);
 
 #endif  // UI_H

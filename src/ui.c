@@ -24,6 +24,7 @@ typedef struct INPUT {
 
 INPUT inputs[INPUTS];
 int selected_input = 0;
+char is_message_shown = 0;
 WINDOW *win;
 
 INPUT new_input(const char *text, int y, int x, int total_width) {
@@ -99,6 +100,20 @@ void handle_input(int ch) {
             if (ch >= '!' && ch <= '~') append_char(ch);
             break;
     }
+
+    if (is_message_shown) {
+        is_message_shown = 0;
+        mvwhline(win, 3, 1, ' ', getmaxx(win) - 2);
+    }
+
+    wrefresh(win);
+}
+
+void show_message(const char *text) {
+    is_message_shown = 1;
+    int width = getmaxx(win), text_length = strlen(text);
+    if (text_length + H_PAD >= width) return;
+    mvwprintw(win, 3, (width - text_length) / 2, text);
     wrefresh(win);
 }
 
