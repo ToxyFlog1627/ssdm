@@ -6,10 +6,10 @@
 void login(const char *username, const char *password) { printf("Logging in \"%s\" with password=\"%s\"\n", username, password); }
 
 int main(void) {
-    show();
+    open_ui();
 
     // TODO: can Ctrl-C or Ctrl-/ happen/affect anything in agetty?
-    int running = 1;
+    char running = 1;
     while (running) {
         int ch = getch();
         if (ch != KEY_ENTER && ch != '\n') {
@@ -20,12 +20,12 @@ int main(void) {
         switch (login(get_value(I_USERNAME), get_value(I_PASSWORD))) {
                 break;
             default:
-                exit(1);
+                abort();
                 break;
         }
     }
 
-    close();
+    close_ui();
 
     return EXIT_SUCCESS;
 }

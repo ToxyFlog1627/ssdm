@@ -1,7 +1,6 @@
 CC = gcc
 CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic
 LDFLAGS = -lncurses -ltinfo
-INSTALL_LOC = /usr/bin
 
 ifeq ($(DEBUG),1)
 	CFLAGS += -g3 -fsanitize={address,undefined,pointer-compare,pointer-subtract,leak} -fstack-protector

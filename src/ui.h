@@ -4,9 +4,9 @@
 #define I_USERNAME 0
 #define I_PASSWORD 1
 
-void show(void);
+void open_ui(void);
 const char *get_value(int input);
 void handle_input(int ch);
-void close(void);
+void close_ui(void);
 
 #endif  // UI_H

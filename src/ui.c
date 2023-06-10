@@ -29,15 +29,9 @@ WINDOW *win;
 INPUT new_input(const char *text, int y, int x, int total_width) {
     size_t text_length = strlen(text) + 1;
 
-    INPUT input;
-    input.y = y;
-    input.x = x;
-    input.tx = input.x + text_length;
-    input.width = total_width - text_length - 2;
-    input.i = -1;
-    input.text = text;
-    input.value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
-    memset(input.value, NULL, MAX_INPUT_LENGTH);
+    char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
+    memset(value, '\0', MAX_INPUT_LENGTH);
+    INPUT input = {y, x, input.x + text_length, total_width - text_length - 2, -1, text, value};
 
     mvwprintw(win, input.y, input.x, input.text);
     mvwhline(win, input.y, input.tx, '_', input.width);
@@ -45,7 +39,7 @@ INPUT new_input(const char *text, int y, int x, int total_width) {
     return input;
 }
 
-void show(void) {
+void open_ui(void) {
     initscr();
     keypad(stdscr, TRUE);
     noecho();
@@ -54,7 +48,7 @@ void show(void) {
 
     int w_width = clamp(COLS / 2, MIN_WIDTH, MAX_WIDTH), w_height = clamp(LINES / 2, MIN_HEIGHT, MAX_HEIGHT);
     win = newwin(w_height, w_width, (LINES - w_height) / 2, (COLS - w_width) / 2);
-    box(win, NULL, NULL);
+    box(win, 0, 0);
 
     const char *title = "ssdm";
     mvwprintw(win, 1, (w_width - strlen(title)) / 2, title);
@@ -108,10 +102,9 @@ void handle_input(int ch) {
     wrefresh(win);
 }
 
-void close(void) {
+void close_ui(void) {
     free(inputs[0].value);
     free(inputs[1].value);
     endwin();
 }
 
-// TODO: error handling for all ncurses method + how to display it? Just log?
