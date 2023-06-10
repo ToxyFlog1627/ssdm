@@ -1,9 +1,8 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "pam.h"
 #include "ui.h"
-
-void login(const char *username, const char *password) { printf("Logging in \"%s\" with password=\"%s\"\n", username, password); }
 
 int main(void) {
     open_ui();
@@ -18,6 +17,14 @@ int main(void) {
         }
 
         switch (login(get_value(I_USERNAME), get_value(I_PASSWORD))) {
+            case AUTH_WRONG_CREDENTIALS:
+                show_message("incorrect login/password");
+                break;
+            case AUTH_ERROR:
+                // TODO: implement
+                break;
+            case AUTH_SUCCESS:
+                running = 0;
                 break;
             default:
                 abort();
@@ -25,6 +32,11 @@ int main(void) {
         }
     }
 
+    // TODO: start xorg, open DE/WM
+
+    if (logout() == AUTH_ERROR) {
+        // TODO: throw error
+    }
     close_ui();
 
     return EXIT_SUCCESS;
