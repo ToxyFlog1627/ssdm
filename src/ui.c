@@ -3,6 +3,7 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include "utils.h"
 
 #define MIN_WIDTH 40
@@ -33,6 +34,11 @@ INPUT new_input(const char *text, int y, int x, int total_width, char hide_input
     size_t text_length = strlen(text) + 1;
 
     char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
+    if (value == NULL) {
+        syslog(LOG_ERR, "Malloc for input failed");
+        exit(EXIT_FAILURE);
+    }
+
     memset(value, '\0', MAX_INPUT_LENGTH);
     INPUT input = {y, x, input.x + text_length, total_width - text_length - 2, -1, text, value, hide_input};
 

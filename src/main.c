@@ -1,13 +1,16 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog.h>
 #include "pam.h"
 #include "ui.h"
 
 int main(void) {
+    openlog("ssdm", 0, LOG_AUTH);
+    atexit(closelog);
     open_ui();
+    atexit(close_ui);
 
-    // TODO: can Ctrl-C or Ctrl-/ happen/affect anything in agetty?
     char running = 1;
     while (running) {
         int ch = getch();
@@ -17,27 +20,25 @@ int main(void) {
         }
 
         switch (login(get_value(I_USERNAME), get_value(I_PASSWORD))) {
+            case AUTH_SUCCESS:
+                running = 0;
+                break;
             case AUTH_WRONG_CREDENTIALS:
                 show_message("incorrect login/password");
                 break;
             case AUTH_ERROR:
-                // TODO: implement
-                break;
-            case AUTH_SUCCESS:
-                running = 0;
+                syslog(LOG_ERR, "PAM Authentication error at login");
                 break;
             default:
-                abort();
+                syslog(LOG_ALERT, "Unkown return value from login");
+                exit(EXIT_FAILURE);
                 break;
         }
     }
 
     // TODO: start xorg, open DE/WM
 
-    if (logout() == AUTH_ERROR) {
-        // TODO: throw error
-    }
-    close_ui();
+    if (logout() == AUTH_ERROR) syslog(LOG_ERR, "PAM Authentication error at logout");
 
     return EXIT_SUCCESS;
 }

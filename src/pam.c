@@ -3,6 +3,7 @@
 #include <security/pam_appl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 
 static pam_handle_t *pam_handle;
 
@@ -19,14 +20,15 @@ int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res
                 (*res)[i].resp = strdup(((char **) appdata)[1]);
                 break;
             case PAM_ERROR_MSG:
-                // TODO: log
+                syslog(LOG_ERR, "PAM conv error message: \"%s\"", msgs[i]->msg);
                 free(*res);
                 return PAM_CONV_ERR;
             case PAM_TEXT_INFO:
-                // TODO: log
+                syslog(LOG_INFO, "PAM conv info message: \"%s\"", msgs[i]->msg);
                 break;
             default:
-                // TODO: throw error
+                syslog(LOG_CRIT, "Unkown message type in PAM conv");
+                exit(EXIT_FAILURE);
                 break;
         }
     }
