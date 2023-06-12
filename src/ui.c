@@ -5,12 +5,13 @@
 #include <string.h>
 #include "utils.h"
 
-#define MIN_WIDTH 50
-#define MAX_WIDTH 100
-#define MIN_HEIGHT 8
-#define MAX_HEIGHT 16
+#define MIN_WIDTH 40
+#define MAX_WIDTH 60
+#define MIN_HEIGHT 10
+#define MAX_HEIGHT 20
+#define H_PAD 3
 
-#define H_PAD 2
+#define PASSWORD_CHAR '*'
 
 #define MAX_INPUT_LENGTH 512
 
@@ -18,6 +19,7 @@ typedef struct INPUT {
     int y, x, tx, width, i;
     const char *text;
     char *value;
+    char hide_input;
 } INPUT;
 
 #define INPUTS 2
@@ -27,15 +29,14 @@ int selected_input = 0;
 char is_message_shown = 0;
 WINDOW *win;
 
-INPUT new_input(const char *text, int y, int x, int total_width) {
+INPUT new_input(const char *text, int y, int x, int total_width, char hide_input) {
     size_t text_length = strlen(text) + 1;
 
     char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
     memset(value, '\0', MAX_INPUT_LENGTH);
-    INPUT input = {y, x, input.x + text_length, total_width - text_length - 2, -1, text, value};
+    INPUT input = {y, x, input.x + text_length, total_width - text_length - 2, -1, text, value, hide_input};
 
     mvwprintw(win, input.y, input.x, input.text);
-    mvwhline(win, input.y, input.tx, '_', input.width);
 
     return input;
 }
@@ -54,8 +55,9 @@ void open_ui(void) {
     const char *title = "ssdm";
     mvwprintw(win, 1, (w_width - strlen(title)) / 2, title);
 
-    inputs[0] = new_input("username:", w_height - 4, H_PAD, w_width - H_PAD);
-    inputs[1] = new_input("password:", w_height - 2, H_PAD, w_width - H_PAD);
+    inputs[0] = new_input("login", w_height - 5, H_PAD, w_width - H_PAD, 0);
+    inputs[1] = new_input("password", w_height - 3, H_PAD, w_width - H_PAD, 1);
+    inputs[0].tx = inputs[1].tx;
 
     wrefresh(win);
 }
@@ -64,6 +66,8 @@ void append_char(char ch) {
     INPUT *input = &inputs[selected_input];
     if (input->i + 2 == MAX_INPUT_LENGTH) return;
     input->value[++input->i] = ch;
+
+    if (input->hide_input) ch = PASSWORD_CHAR;
 
     if (input->i < input->width) mvwaddch(win, input->y, input->tx + input->i, ch);
     else mvwprintw(win, input->y, input->tx, input->value + input->i - input->width + 1);
@@ -122,4 +126,3 @@ void close_ui(void) {
     free(inputs[1].value);
     endwin();
 }
-
