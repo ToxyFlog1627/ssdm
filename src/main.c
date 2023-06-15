@@ -4,9 +4,13 @@
 #include <syslog.h>
 #include "pam.h"
 #include "ui.h"
+#include "utils.h"
 
 int main(void) {
-    openlog("ssdm", 0, LOG_AUTH);
+    int logging_options = LOG_NDELAY;
+    IF_DEBUGGING(logging_options |= LOG_PERROR)
+    openlog("ssdm", logging_options, LOG_AUTH);
+
     atexit(closelog);
     open_ui();
     atexit(close_ui);
