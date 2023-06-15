@@ -14,7 +14,7 @@ pre-install:
 	mkdir -p build
 
 .PHONY: ssdm
-ssdm: build/ui.o build/pam.o
+ssdm: build/ui.o build/pam.o build/config.o
 	$(CC) $(CFLAGS) src/main.c $^ -o $@ $(LDFLAGS)
 
 build/%.o: src/%.c
@@ -24,6 +24,7 @@ build/%.o: src/%.c
 install: all
 	install -m 755 ssdm /usr/bin/ssdm
 	install -m 644 assets/pam.conf /etc/pam.d/ssdm
+	install -m 644 assets/default.conf /etc/ssdm.conf
 
 .PHONY: clean
 clean:

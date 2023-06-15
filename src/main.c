@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
+#include "config.h"
 #include "pam.h"
 #include "ui.h"
 #include "utils.h"
@@ -11,6 +12,7 @@ int main(void) {
     IF_DEBUGGING(logging_options |= LOG_PERROR)
     openlog("ssdm", logging_options, LOG_AUTH);
 
+    load_config();
     atexit(closelog);
     open_ui();
     atexit(close_ui);

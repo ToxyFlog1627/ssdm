@@ -13,6 +13,10 @@ Requirements: ncurses, gmake, gcc, system logger
    For OpenRC Gentoo edit `/etc/inittab`, go to `# TERMINALS` and choose tty on which you want it to open (usually 2nd) \
    Then append `-nl /usr/bin/ssdm` after `/sbin/agetty` and save
 
+## Configuration
+
+After going through installation, ssdm can be configured by editing values in `/etc/ssdm.conf` \
+Comments start with `#`
 
 ## Debugging
 

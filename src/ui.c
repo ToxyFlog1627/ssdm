@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include "config.h"
 #include "utils.h"
 
 #define MIN_WIDTH 40
@@ -11,8 +12,6 @@
 #define MIN_HEIGHT 10
 #define MAX_HEIGHT 20
 #define H_PAD 3
-
-#define PASSWORD_CHAR '*'
 
 #define MAX_INPUT_LENGTH 512
 
@@ -35,7 +34,7 @@ INPUT new_input(const char *text, int y, int x, int total_width, char hide_input
 
     char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
     if (value == NULL) {
-        syslog(LOG_ERR, "Malloc for input failed");
+        syslog(LOG_ALERT, "Bad malloc of input");
         exit(EXIT_FAILURE);
     }
 
@@ -43,6 +42,7 @@ INPUT new_input(const char *text, int y, int x, int total_width, char hide_input
     INPUT input = {y, x, input.x + text_length, total_width - text_length - 2, -1, text, value, hide_input};
 
     mvwprintw(win, input.y, input.x, input.text);
+    mvwhline(win, input.y, input.tx, config.input_placeholder_char, input.width);
 
     return input;
 }
@@ -73,7 +73,7 @@ void append_char(char ch) {
     if (input->i + 2 == MAX_INPUT_LENGTH) return;
     input->value[++input->i] = ch;
 
-    if (input->hide_input) ch = PASSWORD_CHAR;
+    if (input->hide_input) ch = config.password_char;
 
     if (input->i < input->width) mvwaddch(win, input->y, input->tx + input->i, ch);
     else mvwprintw(win, input->y, input->tx, input->value + input->i - input->width + 1);
@@ -84,7 +84,7 @@ void delete_char(void) {
     if (input->i == -1) return;
     input->value[input->i] = '\0';
 
-    if (input->i < input->width) mvwaddch(win, input->y, input->tx + input->i, '_');
+    if (input->i < input->width) mvwaddch(win, input->y, input->tx + input->i, config.input_placeholder_char);
     else mvwprintw(win, input->y, input->tx, input->value + input->i - input->width);
     input->i--;
 }
