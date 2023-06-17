@@ -29,7 +29,7 @@ int selected_input = 0;
 char is_message_shown = 0;
 WINDOW *win;
 
-INPUT new_input(const char *text, int y, int x, int total_width, char hide_input) {
+INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hide_input) {
     size_t text_length = strlen(text) + 1;
 
     char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
@@ -39,10 +39,10 @@ INPUT new_input(const char *text, int y, int x, int total_width, char hide_input
     }
 
     memset(value, '\0', MAX_INPUT_LENGTH);
-    INPUT input = {y, x, input.x + text_length, total_width - text_length - 2, -1, text, value, hide_input};
+    if (tx == 0) tx = x + text_length;
+    INPUT input = {y, x, tx, total_width - text_length - 2, -1, text, value, hide_input};
 
     mvwprintw(win, input.y, input.x, input.text);
-    mvwhline(win, input.y, input.tx, config.input_placeholder_char, input.width);
 
     return input;
 }
@@ -61,10 +61,10 @@ void open_ui(void) {
     const char *title = "ssdm";
     mvwprintw(win, 1, (w_width - strlen(title)) / 2, title);
 
-    inputs[0] = new_input("login", w_height - 5, H_PAD, w_width - H_PAD, 0);
-    inputs[1] = new_input("password", w_height - 3, H_PAD, w_width - H_PAD, 1);
-    inputs[0].tx = inputs[1].tx;
+    inputs[1] = new_input("password", w_height - 3, H_PAD, w_width - H_PAD, 0, 1);
+    inputs[0] = new_input("login", w_height - 5, H_PAD, w_width - H_PAD, inputs[1].tx, 0);
 
+    wmove(win, inputs[selected_input].y, inputs[selected_input].tx);
     wrefresh(win);
 }
 
@@ -116,6 +116,7 @@ void handle_input(int ch) {
         mvwhline(win, 3, 1, ' ', getmaxx(win) - 2);
     }
 
+    wmove(win, inputs[selected_input].y, inputs[selected_input].tx + inputs[selected_input].i + 1);
     wrefresh(win);
 }
 
