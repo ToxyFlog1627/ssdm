@@ -9,7 +9,9 @@
 
 int main(void) {
     int logging_options = LOG_NDELAY;
-    IF_DEBUGGING(logging_options |= LOG_PERROR)
+#ifdef DEBUG
+    logging_options |= LOG_PERROR;
+#endif
     openlog("ssdm", logging_options, LOG_AUTH);
 
     load_config();
