@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
+#include <sys/syslog.h>
 
 #define CONFIG_PATH "/etc/ssdm.conf"
 

@@ -3,7 +3,7 @@
 #include <security/pam_appl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
+#include <sys/syslog.h>
 
 static pam_handle_t *pam_handle;
 

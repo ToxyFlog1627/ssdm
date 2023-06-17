@@ -3,7 +3,7 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
+#include <sys/syslog.h>
 #include "config.h"
 #include "utils.h"
 

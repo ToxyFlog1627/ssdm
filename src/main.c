@@ -1,7 +1,7 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <syslog.h>
+#include <sys/syslog.h>
 #include "config.h"
 #include "pam.h"
 #include "ui.h"
