@@ -13,10 +13,10 @@
 #define SKIP_SPACES(ch) \
     while (*ch == ' ') ch++;
 
-#define PROCESSING_ERROR(error)                                                            \
-    {                                                                                      \
-        syslog(LOG_CRIT, "Invalid line #%d in config file. It %s", line_index + 1, error); \
-        goto exit;                                                                         \
+#define PROCESSING_ERROR(error)                                                         \
+    {                                                                                   \
+        syslog(LOG_CRIT, "Invalid line #%d in config file. It %s", line_number, error); \
+        goto exit;                                                                      \
     }
 #define INVALID_PROPERTY_ERROR() syslog(LOG_WARNING, "Invalid property \"%s\" in config file", key);
 
@@ -42,13 +42,23 @@ void set_char_property(char *key, char value) {
     INVALID_PROPERTY_ERROR();
 }
 
-void set_string_property(char *key, char *value) { set_char_property(key, *value); }
+void set_string_property(char *key, char *value) {
+    assert(value != '\0');
+
+    set_char_property(key, *value);
+}
 
 void set_number_property(char *key, long int value) { INVALID_PROPERTY_ERROR(); }
 
-void set_bool_property(char *key, char value) { INVALID_PROPERTY_ERROR(); }
+void set_bool_property(char *key, char value) {
+    assert(value == 0 || value == 1);
 
-char process_line(int line_index) {
+    INVALID_PROPERTY_ERROR();
+}
+
+char process_line(int line_number) {
+    assert(line_number > 0);
+
     size_t length, i;
     char *line = NULL, *ch, *key = NULL, *value = NULL;
     char is_string = 0;
@@ -132,7 +142,6 @@ void load_config(void) {
     config.password_char = '*';
     config.input_placeholder_char = ' ';
 
-    int i = 0;
-    while (process_line(i)) i++;
-    printf("!!!%d %d!!!\n", (int) config.input_placeholder_char, (int) ' ');
+    int line_number = 1;
+    while (process_line(line_number)) line_number++;
 }
