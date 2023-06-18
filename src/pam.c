@@ -1,5 +1,6 @@
 #define _DEFAULT_SOURCE
 #include "pam.h"
+#include <assert.h>
 #include <security/pam_appl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,8 @@ int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res
 }
 
 int login(const char *username, const char *password) {
+    assert(username != '\0' && password != '\0');
+
     int status;
     const char *data[2] = {username, password};
     struct pam_conv pam_conv = {conv, data};

@@ -4,6 +4,8 @@ LDFLAGS = -lncurses -ltinfo -lpam
 
 ifeq ($(DEBUG),1)
 	CFLAGS += -g3 -fsanitize=undefined -fstack-protector -DDEBUG
+else
+	CFLAGS += -DNDEBUG
 endif
 
 .PHONY: all

@@ -30,7 +30,10 @@ char is_message_shown = 0;
 WINDOW *win;
 
 INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hide_input) {
+    assert(text != '\0' && y > 0 && x > 0 && (hide_input == 0 || hide_input == 1));
+
     size_t text_length = strlen(text) + 1;
+    assert(total_width > text_length);
 
     char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
     if (value == NULL) {
@@ -69,6 +72,8 @@ void open_ui(void) {
 }
 
 void append_char(char ch) {
+    assert(ch >= '!' && ch <= '~');
+
     INPUT *input = &inputs[selected_input];
     if (input->i + 2 == MAX_INPUT_LENGTH) return;
     input->value[++input->i] = ch;
@@ -121,6 +126,8 @@ void handle_input(int ch) {
 }
 
 void show_message(const char *text) {
+    assert(text != '\0');
+
     is_message_shown = 1;
     int width = getmaxx(win), text_length = strlen(text);
     if (text_length + H_PAD >= width) return;

@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "config.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +37,8 @@ FILE *config_file;
 config_t config;
 
 void set_char_property(char *key, char value) {
+    assert(value >= ' ' && value <= '~');
+
     SET_PROPERTY(password_char);
     SET_PROPERTY(input_placeholder_char);
 
