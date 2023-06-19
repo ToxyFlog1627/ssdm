@@ -8,14 +8,9 @@
 #include "utils.h"
 
 int main(void) {
-    int logging_options = LOG_NDELAY;
-#ifdef DEBUG
-    logging_options |= LOG_PERROR;
-#endif
-    openlog("ssdm", logging_options, LOG_AUTH);
-
-    load_config();
+    openlog("ssdm", LOG_NDELAY, LOG_AUTH);
     atexit(closelog);
+    load_config();
     open_ui();
     atexit(close_ui);
 

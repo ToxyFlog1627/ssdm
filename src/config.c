@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "config.h"
 #include <assert.h>
 #include <stdio.h>
@@ -46,7 +45,7 @@ void set_char_property(char *key, char value) {
 }
 
 void set_string_property(char *key, char *value) {
-    assert(value != '\0');
+    assert(value != NULL && *value != '\0');
 
     set_char_property(key, *value);
 }
@@ -121,7 +120,7 @@ char process_line(int line_number) {
         if (*ch != '\0') PROCESSING_ERROR("sets value that neither string nor number")
         long int num = strtol(value, &ch, 10);
         set_number_property(key, num);
-    } else if (IS_BOOL(*ch)) {
+    } else if (IS_BOOL(ch)) {
         char bool = strcmp(value, "true") == 0 ? 1 : 0;
         set_bool_property(key, bool);
     } else {

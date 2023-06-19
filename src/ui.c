@@ -1,4 +1,5 @@
 #include "ui.h"
+#include <assert.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <stdlib.h>
@@ -30,9 +31,9 @@ char is_message_shown = 0;
 WINDOW *win;
 
 INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hide_input) {
-    assert(text != '\0' && y > 0 && x > 0 && (hide_input == 0 || hide_input == 1));
+    assert(text != NULL && *text != '\0' && y > 0 && x > 0 && (hide_input == 0 || hide_input == 1));
 
-    size_t text_length = strlen(text) + 1;
+    int text_length = strlen(text) + 1;
     assert(total_width > text_length);
 
     char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
@@ -126,7 +127,7 @@ void handle_input(int ch) {
 }
 
 void show_message(const char *text) {
-    assert(text != '\0');
+    assert(text != NULL && *text != '\0');
 
     is_message_shown = 1;
     int width = getmaxx(win), text_length = strlen(text);
@@ -136,7 +137,6 @@ void show_message(const char *text) {
 }
 
 void close_ui(void) {
-    free(inputs[0].value);
-    free(inputs[1].value);
+    for (int i = 0; i < INPUTS; i++) free(inputs[i].value);
     endwin();
 }

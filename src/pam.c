@@ -1,4 +1,3 @@
-#define _DEFAULT_SOURCE
 #include "pam.h"
 #include <assert.h>
 #include <security/pam_appl.h>
@@ -38,7 +37,7 @@ int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res
 }
 
 int login(const char *username, const char *password) {
-    assert(username != '\0' && password != '\0');
+    assert(username != NULL && password != NULL && *username != '\0' && *password != '\0');
 
     int status;
     const char *data[2] = {username, password};
@@ -47,7 +46,7 @@ int login(const char *username, const char *password) {
     status = pam_start("ssdm", username, &pam_conv, &pam_handle);
     if (status != PAM_SUCCESS) return AUTH_ERROR;
     status = pam_authenticate(pam_handle, PAM_DISALLOW_NULL_AUTHTOK);
-    if (status == PAM_AUTH_ERR) {
+    if (status == PAM_AUTH_ERR || status == PAM_PERM_DENIED) {
         pam_end(pam_handle, status);
         return AUTH_WRONG_CREDENTIALS;
     }
