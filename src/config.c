@@ -13,10 +13,10 @@
 #define SKIP_SPACES(ch) \
     while (*ch == ' ') ch++;
 
-#define PROCESSING_ERROR(error)                                                         \
-    {                                                                                   \
-        syslog(LOG_CRIT, "Invalid line #%d in config file. It %s", line_number, error); \
-        goto exit;                                                                      \
+#define PROCESSING_ERROR(error)                                                            \
+    {                                                                                      \
+        syslog(LOG_WARNING, "Invalid line #%d in config file. It %s", line_number, error); \
+        goto exit;                                                                         \
     }
 #define INVALID_PROPERTY_ERROR() syslog(LOG_WARNING, "Invalid property \"%s\" in config file", key);
 
@@ -83,7 +83,7 @@ char process_line(int line_number) {
 
     key = (char *) calloc(assignment_index + 1, sizeof(char));
     if (key == NULL) {
-        syslog(LOG_ALERT, "Bad malloc of config key");
+        syslog(LOG_EMERG, "Bad malloc of config key");
         exit(EXIT_FAILURE);
     }
 
@@ -97,7 +97,7 @@ char process_line(int line_number) {
 
     value = (char *) calloc(length - assignment_index, sizeof(char));
     if (value == NULL) {
-        syslog(LOG_ALERT, "Bad malloc of config value");
+        syslog(LOG_EMERG, "Bad malloc of config value");
         exit(EXIT_FAILURE);
     }
 
@@ -125,7 +125,7 @@ char process_line(int line_number) {
         set_bool_property(key, bool);
     } else {
         if (line[length - 1] == '\n') line[length - 1] = '\0';
-        syslog(LOG_CRIT, "Invalid line in config file: \"%s\"", line);
+        syslog(LOG_WARNING, "Invalid line in config file: \"%s\"", line);
     }
 
 exit:
@@ -135,14 +135,14 @@ exit:
 }
 
 void load_config(void) {
-    config_file = fopen(CONFIG_PATH, "r+");
-    if (config_file == NULL) {
-        syslog(LOG_ALERT, "No config file found at \"%s\"", CONFIG_PATH);
-        exit(EXIT_FAILURE);
-    }
-
     config.password_char = '*';
     config.input_placeholder_char = ' ';
+
+    config_file = fopen(CONFIG_PATH, "r+");
+    if (config_file == NULL) {
+        syslog(LOG_WARNING, "No config file found at \"%s\"", CONFIG_PATH);
+        return;
+    }
 
     int line_number = 1;
     while (process_line(line_number)) line_number++;

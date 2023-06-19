@@ -45,7 +45,7 @@ INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hi
 
     char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
     if (value == NULL) {
-        syslog(LOG_ALERT, "Bad malloc of input");
+        syslog(LOG_EMERG, "Bad malloc of input");
         exit(EXIT_FAILURE);
     }
 

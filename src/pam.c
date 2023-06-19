@@ -27,7 +27,7 @@ int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res
                 syslog(LOG_INFO, "PAM conv info message: \"%s\"", msgs[i]->msg);
                 break;
             default:
-                syslog(LOG_CRIT, "Unkown message type in PAM conv");
+                syslog(LOG_EMERG, "Unkown message type in PAM conv");
                 exit(EXIT_FAILURE);
                 break;
         }

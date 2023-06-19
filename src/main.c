@@ -33,7 +33,7 @@ int main(void) {
                 syslog(LOG_ERR, "PAM Authentication error at login");
                 break;
             default:
-                syslog(LOG_ALERT, "Unkown return value from login");
+                syslog(LOG_EMERG, "Unkown return value from login");
                 exit(EXIT_FAILURE);
                 break;
         }
@@ -41,7 +41,7 @@ int main(void) {
 
     // TODO: start xorg, open DE/WM
 
-    if (logout() == AUTH_ERROR) syslog(LOG_ERR, "PAM Authentication error at logout");
+    if (logout() == AUTH_ERROR) syslog(LOG_CRIT, "PAM Authentication error at logout");
 
     return EXIT_SUCCESS;
 }
