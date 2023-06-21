@@ -50,10 +50,16 @@ void set_string_property(char *key, char *value) {
     set_char_property(key, *value);
 }
 
-void set_number_property(char *key, long int value) { INVALID_PROPERTY_ERROR(); }
+void set_number_property(char *key, long int value) {
+    SET_PROPERTY(incorrect_credentials_message)
+
+    INVALID_PROPERTY_ERROR();
+}
 
 void set_bool_property(char *key, char value) {
     assert(value == 0 || value == 1);
+
+    SET_PROPERTY(erase_password_on_failure);
 
     INVALID_PROPERTY_ERROR();
 }
@@ -137,6 +143,8 @@ exit:
 void load_config(void) {
     config.password_char = '*';
     config.input_placeholder_char = ' ';
+    config.erase_password_on_failure = 0;
+    config.incorrect_credentials_message = 3;
 
     config_file = fopen(CONFIG_PATH, "r+");
     if (config_file == NULL) {

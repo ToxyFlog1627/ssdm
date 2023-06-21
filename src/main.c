@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/syslog.h>
@@ -7,41 +8,86 @@
 #include "ui.h"
 #include "utils.h"
 
-int main(void) {
-    openlog("ssdm", LOG_NDELAY, LOG_AUTH);
-    atexit(closelog);
-    load_config();
-    open_ui();
-    atexit(close_ui);
+void signal_handler(int sig) {
+    (void) sig;
+    exit(EXIT_SUCCESS);
+}
 
-    char running = 1;
-    while (running) {
-        int ch = getch();
-        if (ch != KEY_ENTER && ch != '\n') {
-            handle_input(ch);
-            continue;
-        }
+void try_to_logout(void) {
+    if (logout() == AUTH_ERROR) syslog(LOG_CRIT, "PAM Authentication error at logout");
+}
 
-        switch (login(get_value(I_USERNAME), get_value(I_PASSWORD))) {
-            case AUTH_SUCCESS:
-                running = 0;
-                break;
-            case AUTH_WRONG_CREDENTIALS:
-                show_message("incorrect login/password");
-                break;
-            case AUTH_ERROR:
-                syslog(LOG_ERR, "PAM Authentication error at login");
-                break;
-            default:
-                syslog(LOG_EMERG, "Unkown return value from login");
-                exit(EXIT_FAILURE);
-                break;
-        }
+char try_to_login(void) {
+    switch (login(get_value(I_USERNAME), get_value(I_PASSWORD))) {
+        case AUTH_SUCCESS:
+            if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"try_to_logout\" to run atexit");
+            return 1;
+        case AUTH_WRONG_CREDENTIALS:
+            show_message("incorrect login/password");
+            if (config.erase_password_on_failure) reset_password();
+            break;
+        case AUTH_ERROR:
+            syslog(LOG_ERR, "PAM Authentication error at login");
+            break;
+        default:
+            syslog(LOG_EMERG, "Unkown return value from login");
+            exit(EXIT_FAILURE);
+            break;
     }
 
-    // TODO: start xorg, open DE/WM
+    return 0;
+}
 
-    if (logout() == AUTH_ERROR) syslog(LOG_CRIT, "PAM Authentication error at logout");
+void handle_login(void) {
+    while (1) {
+        int ch = getch();
+        switch (ch) {
+            case KEY_BTAB:
+            case KEY_UP:
+                prev_input();
+                break;
+            case '\t':
+            case KEY_DOWN:
+                next_input();
+                break;
+            case 127:
+            case '\b':
+            case KEY_BACKSPACE:
+                delete_char();
+                break;
+            case SHUTDOWN_KEY:
+                if (system("poweroff") != 0) syslog(LOG_CRIT, "Unable to shutdown");
+                exit(EXIT_SUCCESS);
+            case REBOOT_KEY:
+                if (system("reboot") != 0) syslog(LOG_CRIT, "Unable to reboot");
+                exit(EXIT_SUCCESS);
+            case '\n':
+            case KEY_ENTER:
+                if (try_to_login()) return;
+                break;
+            default:
+                append_char(ch);
+                break;
+        };
+        refresh_window();
+    }
+}
+
+int main(void) {
+    signal(SIGTERM, signal_handler);
+    signal(SIGINT, signal_handler);
+
+    openlog("ssdm", LOG_NDELAY, LOG_AUTH);
+    if (atexit(closelog) != 0) syslog(LOG_CRIT, "Unable to register \"closelog\" to run atexit");
+
+    load_config();
+
+    open_ui();
+    if (atexit(close_ui) != 0) syslog(LOG_CRIT, "Unable to register \"close_ui\" to run atexit");
+
+    handle_login();
+
+    // TODO: start xorg, open DE/WM
 
     return EXIT_SUCCESS;
 }
