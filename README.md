@@ -1,9 +1,11 @@
 # Super Simple Display Manager
 
+![Preview](https://github-production-user-asset-6210df.s3.amazonaws.com/59206807/248037296-aafb5ecb-cc01-4b45-a8ef-97a27c747e42.png)
+
 ssdm is a very simple display manager for linux, inspired by [ly](https://github.com/fairyglade/ly) \
-It is only meant to be used with WMs that start from `.xinitrc`, e.g. [DWM](https://dwm.suckless.org/) \
- \
-DISCLAIMER: only tested on Gentoo with OpenRC
+It only works with DE/WMs that are started from `.xinitrc`, e.g. [DWM](https://dwm.suckless.org/) \
+\
+Tested on Gentoo with OpenRC and DWM
 
 ## Installation
 
