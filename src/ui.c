@@ -19,6 +19,14 @@
 #define SHUTDOWN_TEXT "F1 shutdown"
 #define REBOOT_TEXT "F2 reboot"
 
+#define UPDATE_CARET_POSITION() wmove(win, inputs[selected_input].y, inputs[selected_input].tx + inputs[selected_input].i + 1)
+
+#define CLEAR_INPUT(input)                                                            \
+    {                                                                                 \
+        memset(input.value, '\0', MAX_INPUT_LENGTH + 1);                              \
+        mvwhline(win, input.y, input.tx, config.input_placeholder_char, input.width); \
+    }
+
 typedef struct INPUT {
     int y, x, tx, width, i;
     const char *text;
@@ -28,8 +36,6 @@ typedef struct INPUT {
 
 #define MAX_INPUT_LENGTH 512
 #define INPUTS 2
-
-#define UPDATE_CARET_POSITION() wmove(win, inputs[selected_input].y, inputs[selected_input].tx + inputs[selected_input].i + 1)
 
 INPUT inputs[INPUTS];
 int selected_input = 0;
@@ -41,18 +47,17 @@ INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hi
     int text_length = strlen(text) + 1;
     assert(total_width > text_length);
 
-    char *value = (char *) malloc(sizeof(char) * MAX_INPUT_LENGTH);
+    char *value = (char *) malloc(sizeof(char) * (MAX_INPUT_LENGTH + 1));
     if (value == NULL) {
         syslog(LOG_EMERG, "Bad malloc of input");
         exit(EXIT_FAILURE);
     }
 
-    memset(value, '\0', MAX_INPUT_LENGTH);
     if (tx == 0) tx = x + text_length;
     INPUT input = {y, x, tx, total_width - tx, -1, text, value, hide_input};
 
+    CLEAR_INPUT(input);
     mvwprintw(win, input.y, input.x, input.text);
-    mvwhline(win, input.y, input.tx, config.input_placeholder_char, input.width);
 
     return input;
 }
@@ -88,7 +93,7 @@ void append_char(char ch) {
     if (ch < '!' || ch > '~') return;
 
     INPUT *input = &inputs[selected_input];
-    if (input->i + 2 == MAX_INPUT_LENGTH) return;
+    if (input->i + 1 == MAX_INPUT_LENGTH) return;
     input->value[++input->i] = ch;
 
     if (input->hide_input) ch = config.password_char;
@@ -107,11 +112,16 @@ void delete_char(void) {
     input->i--;
 }
 
-const char *get_value(int input) { return input < INPUTS ? inputs[input].value : NULL; }
+const char *get_value(int input) {
+    assert(input >= 0 && input < INPUTS);
+    return inputs[input].value;
+}
+
 
 void hide_message(int sig) {
     (void) sig;
     if (signal(SIGALRM, SIG_DFL) == SIG_ERR) syslog(LOG_CRIT, "Unable to clear SIGALRM handler");
+
     mvwhline(win, 3, 1, ' ', getmaxx(win) - 2);
     refresh_window();
 }
@@ -123,17 +133,14 @@ void show_message(const char *text) {
     if (text_length + H_PAD >= width) return;
 
     mvwprintw(win, 3, (width - text_length) / 2, text);
-    refresh_window();
 
     if (signal(SIGALRM, hide_message) == SIG_ERR) syslog(LOG_CRIT, "Unable to set SIGALRM handler");
     else alarm(config.incorrect_credentials_message);
 }
 
 void reset_password(void) {
-    INPUT *input = &inputs[I_PASSWORD];
-    memset(input->value, '\0', MAX_INPUT_LENGTH);
-    mvwhline(win, input->y, input->tx, config.input_placeholder_char, input->width);
-    input->i = -1;
+    CLEAR_INPUT(inputs[I_PASSWORD]);
+    inputs[I_PASSWORD].i = -1;
 }
 
 void refresh_window(void) {

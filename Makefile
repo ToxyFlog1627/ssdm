@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic -D_GNU_SOURCE
+CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic
 LDFLAGS = -lncurses -ltinfo -lpam
 
 ifeq ($(DEBUG),1)
@@ -13,7 +13,7 @@ endif
 all: init ssdm
 
 .PHONY: ssdm
-ssdm: build/ui.o build/pam.o build/config.o
+ssdm: build/ui.o build/pam.o build/config.o build/store.o
 	$(CC) $(CFLAGS) src/main.c $^ -o $@ $(LDFLAGS)
 
 build/%.o: src/%.c

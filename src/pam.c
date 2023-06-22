@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "pam.h"
 #include <assert.h>
 #include <security/pam_appl.h>

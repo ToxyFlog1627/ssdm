@@ -3,7 +3,7 @@
 
 #include <ncurses.h>
 
-#define I_USERNAME 0
+#define I_LOGIN 0
 #define I_PASSWORD 1
 
 #define SHUTDOWN_KEY KEY_F(1)

@@ -18,7 +18,7 @@ void try_to_logout(void) {
 }
 
 char try_to_login(void) {
-    switch (login(get_value(I_USERNAME), get_value(I_PASSWORD))) {
+    switch (login(get_value(I_LOGIN), get_value(I_PASSWORD))) {
         case AUTH_SUCCESS:
             if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"try_to_logout\" to run atexit");
             return 1;
