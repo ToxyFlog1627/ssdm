@@ -117,6 +117,20 @@ const char *get_value(int input) {
     return inputs[input].value;
 }
 
+void set_value(int input_index, char *value) {
+    assert(input_index >= 0 && input_index < INPUTS);
+
+    size_t length = strlen(value);
+    if (length >= MAX_INPUT_LENGTH) {
+        syslog(LOG_ALERT, "Unable to set value that is longer than max input length");
+        return;
+    }
+
+    INPUT *input = &inputs[input_index];
+    strcpy(input->value, value);
+    mvwprintw(win, input->y, input->tx, input->value);
+    input->i = length - 1;
+}
 
 void hide_message(int sig) {
     (void) sig;

@@ -15,6 +15,7 @@ void next_input(void);
 void append_char(char ch);
 void delete_char(void);
 const char *get_value(int input);
+void set_value(int input, char *value);
 void show_message(const char *text);
 void reset_password(void);
 void refresh_window(void);

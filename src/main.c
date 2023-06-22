@@ -2,9 +2,11 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/syslog.h>
 #include "config.h"
 #include "pam.h"
+#include "store.h"
 #include "ui.h"
 #include "utils.h"
 
@@ -21,6 +23,7 @@ char try_to_login(void) {
     switch (login(get_value(I_LOGIN), get_value(I_PASSWORD))) {
         case AUTH_SUCCESS:
             if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"try_to_logout\" to run atexit");
+            if (config.save_login) store("login", get_value(I_LOGIN), sizeof(char) * (strlen(get_value(I_LOGIN)) + 1));
             return 1;
         case AUTH_WRONG_CREDENTIALS:
             show_message("incorrect login/password");
@@ -84,6 +87,13 @@ int main(void) {
 
     open_ui();
     if (atexit(close_ui) != 0) syslog(LOG_CRIT, "Unable to register \"close_ui\" to run atexit");
+
+    if (config.save_login == 1) {
+        void *value = load("login");
+        if (value != NULL) set_value(I_LOGIN, (char *) value);
+        free(value);
+        refresh_window();
+    }
 
     handle_login();
 

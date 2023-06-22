@@ -61,6 +61,7 @@ void set_bool_property(char *key, char value) {
     assert(value == 0 || value == 1);
 
     SET_PROPERTY(erase_password_on_failure);
+    SET_PROPERTY(save_login);
 
     INVALID_PROPERTY_ERROR();
 }
@@ -145,6 +146,7 @@ void load_config(void) {
     config.password_char = '*';
     config.input_placeholder_char = ' ';
     config.erase_password_on_failure = 0;
+    config.save_login = 1;
     config.incorrect_credentials_message = 3;
 
     config_file = fopen(CONFIG_PATH, "r+");
