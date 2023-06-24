@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <ncurses.h>
 #include <signal.h>
 #include <stdio.h>
@@ -77,8 +78,12 @@ void handle_login(void) {
 }
 
 int main(void) {
-    signal(SIGTERM, signal_handler);
-    signal(SIGINT, signal_handler);
+    struct sigaction action;
+    action.sa_handler = signal_handler;
+    action.sa_flags = 0;
+    sigemptyset(&action.sa_mask);
+    sigaction(SIGTERM, &action, NULL);
+    sigaction(SIGINT, &action, NULL);
 
     openlog("ssdm", LOG_NDELAY, LOG_AUTH);
     if (atexit(closelog) != 0) syslog(LOG_CRIT, "Unable to register \"closelog\" to run atexit");

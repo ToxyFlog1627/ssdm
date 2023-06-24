@@ -4,7 +4,7 @@
 typedef struct config_t {
     char password_char, input_placeholder_char;
     char erase_password_on_failure, save_login;
-    int incorrect_credentials_message;
+    int error_message_duration_seconds;
 } config_t;
 
 extern config_t config;

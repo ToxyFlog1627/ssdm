@@ -52,7 +52,7 @@ void set_string_property(char *key, char *value) {
 }
 
 void set_number_property(char *key, long int value) {
-    SET_PROPERTY(incorrect_credentials_message)
+    SET_PROPERTY(error_message_duration_seconds)
 
     INVALID_PROPERTY_ERROR();
 }
@@ -147,7 +147,7 @@ void load_config(void) {
     config.input_placeholder_char = ' ';
     config.erase_password_on_failure = 0;
     config.save_login = 1;
-    config.incorrect_credentials_message = 3;
+    config.error_message_duration_seconds = 3;
 
     config_file = fopen(CONFIG_PATH, "r+");
     if (config_file == NULL) {

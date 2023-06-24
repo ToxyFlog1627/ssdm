@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "ui.h"
 #include <assert.h>
 #include <locale.h>
@@ -134,8 +135,6 @@ void set_value(int input_index, char *value) {
 
 void hide_message(int sig) {
     (void) sig;
-    if (signal(SIGALRM, SIG_DFL) == SIG_ERR) syslog(LOG_CRIT, "Unable to clear SIGALRM handler");
-
     mvwhline(win, 3, 1, ' ', getmaxx(win) - 2);
     refresh_window();
 }
@@ -148,8 +147,16 @@ void show_message(const char *text) {
 
     mvwprintw(win, 3, (width - text_length) / 2, text);
 
-    if (signal(SIGALRM, hide_message) == SIG_ERR) syslog(LOG_CRIT, "Unable to set SIGALRM handler");
-    else alarm(config.incorrect_credentials_message);
+    struct sigaction action;
+    action.sa_handler = hide_message;
+    action.sa_flags = SA_RESETHAND;
+    sigemptyset(&action.sa_mask);
+    if (sigaction(SIGALRM, &action, NULL) == -1) {
+        syslog(LOG_CRIT, "Unable to set SIGALRM handler");
+        return;
+    }
+
+    alarm(config.error_message_duration_seconds);
 }
 
 void reset_password(void) {
