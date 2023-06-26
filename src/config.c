@@ -48,6 +48,8 @@ void set_char_property(char *key, char value) {
 void set_string_property(char *key, char *value) {
     assert(value != NULL && value[0] != '\0');
 
+    SET_PROPERTY(xauth_filename);
+
     set_char_property(key, *value);
 }
 
@@ -148,6 +150,7 @@ void load_config(void) {
     config.erase_password_on_failure = 0;
     config.save_login = 1;
     config.error_message_duration_seconds = 3;
+    config.xauth_filename = "ssdm_xauth";
 
     config_file = fopen(CONFIG_PATH, "r+");
     if (config_file == NULL) {

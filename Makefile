@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic
-LDFLAGS = -lncurses -ltinfo -lpam -lX11
+LDFLAGS = -lncurses -ltinfo -lpam
 
 ifeq ($(DEBUG),1)
 	CFLAGS += -g3 -fsanitize=undefined -fstack-protector -DDEBUG

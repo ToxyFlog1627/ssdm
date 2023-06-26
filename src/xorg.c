@@ -1,23 +1,52 @@
 #define _POSIX_C_SOURCE 200112L
 #define _DEFAULT_SOURCE
-#include <X11/Xlib.h>
 #include <assert.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/syslog.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <utmp.h>
+#include "config.h"
 #include "pam.h"
 
-#define RUNTIME_DIR_PATH_LENGTH 18
+#define MAX_RUNTIME_DIR_PATH_LENGTH 31
+#define MAX_XAUTHORITY_PATH_LENGTH 255
 
-struct passwd *pwd;
+#define XAUTHORITY_FILE_PERMISSIONS S_IRUSR | S_IWUSR
+
+#define CREATE_FILE(path, permissions)                               \
+    {                                                                \
+        int fd = open(path, O_RDWR | O_CREAT, permissions);          \
+        if (fd == -1 || close(fd) == -1) {                           \
+            syslog(LOG_EMERG, "Unable to create file \"%s\"", path); \
+            exit(EXIT_FAILURE);                                      \
+        }                                                            \
+    }
+
+#define EXEC(command)                                                                      \
+    {                                                                                      \
+        pid_t pid = fork();                                                                \
+        if (pid == -1) {                                                                   \
+            syslog(LOG_EMERG, "Unable to fork to execute \"%s\"", command);                \
+            exit(EXIT_FAILURE);                                                            \
+        }                                                                                  \
+        if (pid == 0) execl(pwd->pw_shell, pwd->pw_shell, "-c", command, NULL);            \
+                                                                                           \
+        int status;                                                                        \
+        waitpid(pid, &status, 0);                                                          \
+        if (status != 0) {                                                                 \
+            syslog(LOG_EMERG, "Process executing \"%s\" exited with error code", command); \
+            exit(EXIT_FAILURE);                                                            \
+        }                                                                                  \
+    }
+
+struct passwd* pwd;
 
 void init_env(void) {
     if (getenv("TERM") == NULL) setenv("TERM", "linux", 1);
@@ -27,9 +56,10 @@ void init_env(void) {
     setenv("SHELL", pwd->pw_shell, 1);
     setenv("USER", pwd->pw_name, 1);
     setenv("LOGNAME", pwd->pw_name, 1);
+    setenv("DISPLAY", ":0", 1);
 
-    char runtime_dir_path[RUNTIME_DIR_PATH_LENGTH + 1];
-    snprintf(runtime_dir_path, RUNTIME_DIR_PATH_LENGTH, "/run/user/%d", getuid());
+    char runtime_dir_path[MAX_RUNTIME_DIR_PATH_LENGTH + 1];
+    snprintf(runtime_dir_path, MAX_RUNTIME_DIR_PATH_LENGTH, "/run/user/%d", getuid());
     setenv("XDG_RUNTIME_DIR", runtime_dir_path, 0);
     setenv("XDG_SESSION_CLASS", "user", 0);
     setenv("XDG_SESSION_ID", "1", 0);
@@ -47,7 +77,7 @@ void add_utmp_entry(void) {
     strcpy(entry.ut_id, ttyname(STDIN_FILENO) + strlen("/dev/tty"));
     strcpy(entry.ut_user, pwd->pw_name);
     memset(entry.ut_host, 0, UT_HOSTSIZE);
-    time((time_t *) &entry.ut_time);
+    time((time_t*) &entry.ut_time);
     entry.ut_addr = 0;
 
     setutent();
@@ -82,12 +112,20 @@ void xorg(void) {
     init_env();
     pam_init_env();
 
-    // TODO: actually start
+    char xauthority[MAX_XAUTHORITY_PATH_LENGTH + 1];
+    snprintf(xauthority, MAX_XAUTHORITY_PATH_LENGTH, "%s/%s", getenv("XDG_RUNTIME_DIR"), config.xauth_filename);
 
+    setenv("XAUTHORITY", xauthority, 1);
+    CREATE_FILE(xauthority, XAUTHORITY_FILE_PERMISSIONS);
+    EXEC("xauth add :0 . $(mcookie)");
+
+    // TODO: ...
+
+    EXEC("xauth remove :0");
     exit(EXIT_SUCCESS);
 }
 
-void start_xorg(const char *username) {
+void start_xorg(const char* username) {
     assert(username != NULL && username[0] != '\0');
 
     pwd = getpwnam(username);
@@ -108,6 +146,6 @@ void start_xorg(const char *username) {
     add_utmp_entry();
     int status;
     waitpid(pid, &status, 0);
-    if (status != 0) syslog(LOG_ALERT, "Unsuccessful return when starting xorg");
+    if (status != 0) syslog(LOG_ALERT, "Xorg-launching process exited with error code");
     delete_utmp_entry();
 }
