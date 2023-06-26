@@ -10,6 +10,7 @@
 #include "store.h"
 #include "ui.h"
 #include "utils.h"
+#include "xorg.h"
 
 void signal_handler(int sig) {
     (void) sig;
@@ -96,6 +97,7 @@ int main(void) {
             case '\n':
             case KEY_ENTER:
                 if (!try_to_login()) break;
+                start_xorg(get_value(I_USERNAME));
                 pam_logout();
                 break;
             default:

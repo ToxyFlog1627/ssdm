@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic
-LDFLAGS = -lncurses -ltinfo -lpam
+LDFLAGS = -lncurses -ltinfo -lpam -lX11
 
 ifeq ($(DEBUG),1)
 	CFLAGS += -g3 -fsanitize=undefined -fstack-protector -DDEBUG
@@ -13,7 +13,7 @@ endif
 all: init ssdm
 
 .PHONY: ssdm
-ssdm: build/ui.o build/pam.o build/config.o build/store.o
+ssdm: build/ui.o build/pam.o build/config.o build/store.o build/xorg.o
 	$(CC) $(CFLAGS) src/main.c $^ -o $@ $(LDFLAGS)
 
 build/%.o: src/%.c

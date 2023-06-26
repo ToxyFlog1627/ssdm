@@ -83,3 +83,14 @@ on_error:
     PAM_CLOSE();
     return AUTH_ERROR;
 }
+
+void pam_init_env(void) {
+    assert(pam_handle != NULL);
+
+    char **env = pam_getenvlist(pam_handle);
+    if (env == NULL) {
+        syslog(LOG_CRIT, "Unable to set PAM environment variables");
+    } else {
+        for (int i = 0; env[i]; i++) putenv(env[i]);
+    }
+}

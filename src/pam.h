@@ -7,5 +7,6 @@
 
 int pam_login(const char *username, const char *password);
 int pam_logout(void);
+void pam_init_env(void);
 
 #endif  // PAM_H
