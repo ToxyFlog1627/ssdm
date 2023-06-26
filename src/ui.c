@@ -9,7 +9,10 @@
 #include <sys/syslog.h>
 #include <unistd.h>
 #include "config.h"
-#include "utils.h"
+
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define max(x, y) ((x) > (y) ? (x) : (y))
+#define clamp(v, l, u) min(max(v, l), u)
 
 #define MIN_WIDTH 40
 #define MAX_WIDTH 60

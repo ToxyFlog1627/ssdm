@@ -9,7 +9,6 @@
 #include "pam.h"
 #include "store.h"
 #include "ui.h"
-#include "utils.h"
 #include "xorg.h"
 
 void signal_handler(int sig) {
