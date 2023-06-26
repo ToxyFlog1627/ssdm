@@ -22,10 +22,10 @@
 
 #define UPDATE_CARET_POSITION() wmove(win, inputs[selected_input].y, inputs[selected_input].tx + inputs[selected_input].i + 1)
 
-#define CLEAR_INPUT(input)                                                            \
-    {                                                                                 \
-        memset(input.value, '\0', MAX_INPUT_LENGTH + 1);                              \
-        mvwhline(win, input.y, input.tx, config.input_placeholder_char, input.width); \
+#define CLEAR_INPUT(input)                                                                  \
+    {                                                                                       \
+        memset((input).value, '\0', MAX_INPUT_LENGTH + 1);                                  \
+        mvwhline(win, (input).y, (input).tx, config.input_placeholder_char, (input).width); \
     }
 
 typedef struct INPUT {
@@ -128,9 +128,11 @@ void set_value(int input_index, char *value) {
     }
 
     INPUT *input = &inputs[input_index];
+    input->i = length - 1;
+
+    CLEAR_INPUT(*input);
     strcpy(input->value, value);
     mvwprintw(win, input->y, input->tx, input->value);
-    input->i = length - 1;
 }
 
 void hide_message(int sig) {
@@ -159,9 +161,11 @@ void show_message(const char *text) {
     alarm(config.error_message_duration_seconds);
 }
 
-void reset_password(void) {
-    CLEAR_INPUT(inputs[I_PASSWORD]);
-    inputs[I_PASSWORD].i = -1;
+void clear_input(int input) {
+    assert(input >= 0 && input < INPUTS);
+
+    CLEAR_INPUT(inputs[input]);
+    inputs[input].i = -1;
 }
 
 void refresh_window(void) {

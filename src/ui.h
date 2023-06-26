@@ -3,7 +3,7 @@
 
 #include <ncurses.h>
 
-#define I_LOGIN 0
+#define I_USERNAME 0
 #define I_PASSWORD 1
 
 #define SHUTDOWN_KEY KEY_F(1)
@@ -17,7 +17,7 @@ void delete_char(void);
 const char *get_value(int input);
 void set_value(int input, char *value);
 void show_message(const char *text);
-void reset_password(void);
+void clear_input(int input);
 void refresh_window(void);
 void close_ui(void);
 

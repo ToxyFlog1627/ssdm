@@ -6,7 +6,11 @@
 #include <string.h>
 #include <sys/syslog.h>
 
-static pam_handle_t *pam_handle;
+#define PAM_CLOSE()              \
+    pam_end(pam_handle, status); \
+    pam_handle = NULL;
+
+static pam_handle_t *pam_handle = NULL;
 
 int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res, void *appdata) {
     *res = calloc(num_msg, sizeof(struct pam_response));
@@ -37,8 +41,8 @@ int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res
     return PAM_SUCCESS;
 }
 
-int login(const char *username, const char *password) {
-    assert(username != NULL && password != NULL && *username != '\0' && *password != '\0');
+int pam_login(const char *username, const char *password) {
+    assert(username != NULL && password != NULL && username[0] != '\0' && password[0] != '\0' && pam_handle == NULL);
 
     int status;
     const char *data[2] = {username, password};
@@ -48,7 +52,7 @@ int login(const char *username, const char *password) {
     if (status != PAM_SUCCESS) return AUTH_ERROR;
     status = pam_authenticate(pam_handle, PAM_DISALLOW_NULL_AUTHTOK);
     if (status == PAM_AUTH_ERR || status == PAM_PERM_DENIED) {
-        pam_end(pam_handle, status);
+        PAM_CLOSE();
         return AUTH_WRONG_CREDENTIALS;
     }
     if (status != PAM_SUCCESS) goto on_error;
@@ -61,21 +65,21 @@ int login(const char *username, const char *password) {
 
     return AUTH_SUCCESS;
 on_error:
-    pam_end(pam_handle, status);
+    PAM_CLOSE();
     return AUTH_ERROR;
 }
 
-int logout(void) {
-    int status;
+int pam_logout(void) {
+    if (pam_handle == NULL) return AUTH_SUCCESS;
 
-    status = pam_close_session(pam_handle, 0);
+    int status = pam_close_session(pam_handle, 0);
     if (status != PAM_SUCCESS) goto on_error;
     status = pam_setcred(pam_handle, PAM_DELETE_CRED);
     if (status != PAM_SUCCESS) goto on_error;
-    pam_end(pam_handle, status);
+    PAM_CLOSE();
 
     return AUTH_SUCCESS;
 on_error:
-    pam_end(pam_handle, status);
+    PAM_CLOSE();
     return AUTH_ERROR;
 }

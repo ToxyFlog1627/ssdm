@@ -16,19 +16,28 @@ void signal_handler(int sig) {
     exit(EXIT_SUCCESS);
 }
 
+void set_signal_handlers(void) {
+    struct sigaction action;
+    action.sa_handler = signal_handler;
+    action.sa_flags = 0;
+    sigemptyset(&action.sa_mask);
+    sigaction(SIGTERM, &action, NULL);
+    sigaction(SIGINT, &action, NULL);
+}
+
 void try_to_logout(void) {
-    if (logout() == AUTH_ERROR) syslog(LOG_CRIT, "PAM Authentication error at logout");
+    if (pam_logout() == AUTH_ERROR) syslog(LOG_CRIT, "PAM Authentication error at logout");
 }
 
 char try_to_login(void) {
-    switch (login(get_value(I_LOGIN), get_value(I_PASSWORD))) {
+    switch (pam_login(get_value(I_USERNAME), get_value(I_PASSWORD))) {
         case AUTH_SUCCESS:
-            if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"try_to_logout\" to run atexit");
-            if (config.save_login) store("login", get_value(I_LOGIN), sizeof(char) * (strlen(get_value(I_LOGIN)) + 1));
+            clear_input(I_PASSWORD);
+            if (config.save_login) store("username", get_value(I_USERNAME), sizeof(char) * (strlen(get_value(I_USERNAME)) + 1));
             return 1;
         case AUTH_WRONG_CREDENTIALS:
             show_message("incorrect login/password");
-            if (config.erase_password_on_failure) reset_password();
+            if (config.erase_password_on_failure) clear_input(I_PASSWORD);
             break;
         case AUTH_ERROR:
             syslog(LOG_ERR, "PAM Authentication error at login");
@@ -42,7 +51,26 @@ char try_to_login(void) {
     return 0;
 }
 
-void handle_login(void) {
+int main(void) {
+    set_signal_handlers();
+    openlog("ssdm", LOG_NDELAY, LOG_AUTH);
+    load_config();
+    open_ui();
+
+    if (atexit(closelog) != 0) syslog(LOG_CRIT, "Unable to register \"closelog\" to run atexit");
+    if (atexit(close_ui) != 0) syslog(LOG_CRIT, "Unable to register \"close_ui\" to run atexit");
+    if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"try_to_logout\" to run atexit");
+
+    if (config.save_login == 1) {
+        void *value = load("username");
+        if (value != NULL) {
+            set_value(I_USERNAME, (char *) value);
+            free(value);
+            next_input();
+            refresh_window();
+        }
+    }
+
     while (1) {
         int ch = getch();
         switch (ch) {
@@ -67,7 +95,8 @@ void handle_login(void) {
                 exit(EXIT_SUCCESS);
             case '\n':
             case KEY_ENTER:
-                if (try_to_login()) return;
+                if (!try_to_login()) break;
+                pam_logout();
                 break;
             default:
                 append_char(ch);
@@ -75,34 +104,6 @@ void handle_login(void) {
         };
         refresh_window();
     }
-}
-
-int main(void) {
-    struct sigaction action;
-    action.sa_handler = signal_handler;
-    action.sa_flags = 0;
-    sigemptyset(&action.sa_mask);
-    sigaction(SIGTERM, &action, NULL);
-    sigaction(SIGINT, &action, NULL);
-
-    openlog("ssdm", LOG_NDELAY, LOG_AUTH);
-    if (atexit(closelog) != 0) syslog(LOG_CRIT, "Unable to register \"closelog\" to run atexit");
-
-    load_config();
-
-    open_ui();
-    if (atexit(close_ui) != 0) syslog(LOG_CRIT, "Unable to register \"close_ui\" to run atexit");
-
-    if (config.save_login == 1) {
-        void *value = load("login");
-        if (value != NULL) set_value(I_LOGIN, (char *) value);
-        free(value);
-        refresh_window();
-    }
-
-    handle_login();
-
-    // TODO: start xorg, open DE/WM
 
     return EXIT_SUCCESS;
 }

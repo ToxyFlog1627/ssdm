@@ -5,7 +5,7 @@
 #define AUTH_WRONG_CREDENTIALS 1
 #define AUTH_ERROR 2
 
-int login(const char *username, const char *password);
-int logout(void);
+int pam_login(const char *username, const char *password);
+int pam_logout(void);
 
 #endif  // PAM_H
