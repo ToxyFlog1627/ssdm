@@ -36,7 +36,7 @@ void open_store_dir(void) {
 }
 
 char store(const char *key, const void *value, size_t size) {
-    assert(key != NULL && *key != '\0' && size > 0);
+    assert(key != NULL && key[0] != '\0' && size > 0);
 
     if (dir_fd == ERROR_FD) return -1;
     if (dir_fd == -1) open_store_dir();
@@ -64,7 +64,7 @@ char store(const char *key, const void *value, size_t size) {
 }
 
 void *load(const char *key) {
-    assert(key != NULL && *key != '\0');
+    assert(key != NULL && key[0] != '\0');
 
     if (dir_fd == ERROR_FD) return NULL;
     if (dir_fd == -1) open_store_dir();

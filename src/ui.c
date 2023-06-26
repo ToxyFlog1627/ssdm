@@ -43,7 +43,7 @@ int selected_input = 0;
 WINDOW *win;
 
 INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hide_input) {
-    assert(text != NULL && *text != '\0' && y > 0 && x > 0 && (hide_input == 0 || hide_input == 1));
+    assert(text != NULL && text[0] != '\0' && y > 0 && x > 0 && (hide_input == 0 || hide_input == 1));
 
     int text_length = strlen(text) + 1;
     assert(total_width > text_length);
@@ -65,6 +65,7 @@ INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hi
 
 void open_ui(void) {
     initscr();
+    setlocale(LC_ALL, "C");
     keypad(stdscr, TRUE);
     noecho();
 
@@ -142,7 +143,7 @@ void hide_message(int sig) {
 }
 
 void show_message(const char *text) {
-    assert(text != NULL && *text != '\0');
+    assert(text != NULL && text[0] != '\0');
 
     int width = getmaxx(win), text_length = strlen(text);
     if (text_length + H_PAD >= width) return;

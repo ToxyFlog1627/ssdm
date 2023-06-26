@@ -46,7 +46,7 @@ void set_char_property(char *key, char value) {
 }
 
 void set_string_property(char *key, char *value) {
-    assert(value != NULL && *value != '\0');
+    assert(value != NULL && value[0] != '\0');
 
     set_char_property(key, *value);
 }
