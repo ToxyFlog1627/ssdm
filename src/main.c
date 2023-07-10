@@ -56,6 +56,7 @@ int main(void) {
     openlog("ssdm", LOG_NDELAY, LOG_AUTH);
     load_config();
     open_ui();
+    if (atexit(free_config) != 0) syslog(LOG_CRIT, "Unable to register \"free_config\" to run atexit");
 
     if (atexit(closelog) != 0) syslog(LOG_CRIT, "Unable to register \"closelog\" to run atexit");
     if (atexit(close_ui) != 0) syslog(LOG_CRIT, "Unable to register \"close_ui\" to run atexit");
@@ -88,10 +89,10 @@ int main(void) {
                 delete_char();
                 break;
             case SHUTDOWN_KEY:
-                if (system("poweroff") != 0) syslog(LOG_CRIT, "Unable to shutdown");
+                if (system(config.shutdown_cmd) != 0) syslog(LOG_CRIT, "Unable to shutdown");
                 exit(EXIT_SUCCESS);
             case REBOOT_KEY:
-                if (system("reboot") != 0) syslog(LOG_CRIT, "Unable to reboot");
+                if (system(config.reboot_cmd) != 0) syslog(LOG_CRIT, "Unable to reboot");
                 exit(EXIT_SUCCESS);
             case '\n':
             case KEY_ENTER:
