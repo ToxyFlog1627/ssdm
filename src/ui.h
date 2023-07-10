@@ -10,6 +10,7 @@
 #define REBOOT_KEY KEY_F(2)
 
 void open_ui(void);
+void focus_tty(void);
 void prev_input(void);
 void next_input(void);
 void append_char(char ch);

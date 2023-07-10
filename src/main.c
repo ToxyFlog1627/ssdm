@@ -32,6 +32,8 @@ int main(void) {
     open_ui();
     if (atexit(close_ui) != 0) syslog(LOG_CRIT, "Unable to register \"close_ui\" to run atexit");
 
+    focus_tty();
+
     while (1) {
         refresh_window();
         int ch = get_ch();

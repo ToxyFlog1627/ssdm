@@ -1,11 +1,14 @@
 #define _POSIX_C_SOURCE 200809L
 #include "ui.h"
 #include <assert.h>
+#include <linux/vt.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/syslog.h>
 #include <unistd.h>
 #include "config.h"
@@ -122,6 +125,22 @@ void open_ui(void) {
     wrefresh(win);
 
     is_ui_opened = 1;
+}
+
+void focus_tty(void) {
+    FILE *console = fopen("/dev/console", "w");
+    if (console == NULL) {
+        syslog(LOG_CRIT, "Unable to open /dev/console!");
+        return;
+    }
+
+    int fd = fileno(console);
+    int tty = strtol(ttyname(STDIN_FILENO) + strlen("/dev/tty"), NULL, 10);
+
+    if (ioctl(fd, VT_ACTIVATE, tty) == -1) syslog(LOG_CRIT, "Unable to focus tty!");
+    if (ioctl(fd, VT_WAITACTIVE, tty) == -1) syslog(LOG_CRIT, "Unable to wait for tty to get focused!");
+
+    fclose(console);
 }
 
 void next_input(void) { selected_input = (selected_input + 1) % INPUTS; }
