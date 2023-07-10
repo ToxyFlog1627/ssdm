@@ -27,10 +27,16 @@ init:
 	mkdir -p build
 
 .PHONY: install
-install: all
+install: all installnoconf installconf
+
+.PHONY: installnoconf
+installnoconf: all
 	install -m 755 ssdm /usr/bin/ssdm
 	install -D -m 755 assets/xsetup.sh /usr/share/ssdm/xsetup.sh
 	install -m 644 assets/pam.conf /etc/pam.d/ssdm
+
+.PHONY: installconf
+installconf: all
 	install -m 644 assets/default.conf /etc/ssdm.conf
 
 .PHONY: clean
