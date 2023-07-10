@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic -Wno-int-conversion
 LDFLAGS = -lncurses -ltinfo -lpam
-FILES = ui pam config store xorg
+FILES = ui pam config store xorg login
 OBJECTS = $(patsubst %, build/%.o, $(FILES))
 
 ifeq ($(DEBUG),1)

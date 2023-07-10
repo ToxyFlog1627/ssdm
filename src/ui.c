@@ -9,6 +9,7 @@
 #include <sys/syslog.h>
 #include <unistd.h>
 #include "config.h"
+#include "store.h"
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
@@ -18,6 +19,9 @@
 #define MAX_WIDTH 60
 #define HEIGHT 10
 #define H_PAD 3
+
+#define MAX_INPUT_LENGTH 512
+#define INPUTS 2
 
 #define TITLE "ssdm"
 #define SHUTDOWN_TEXT "F1 shutdown"
@@ -38,11 +42,9 @@ typedef struct INPUT {
     char hide_input;
 } INPUT;
 
-#define MAX_INPUT_LENGTH 512
-#define INPUTS 2
-
 INPUT inputs[INPUTS];
 int selected_input = 0;
+char is_ui_opened = 0;
 WINDOW *win;
 
 INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hide_input) {
@@ -66,7 +68,35 @@ INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hi
     return input;
 }
 
+void set_value(int input_index, char *value) {
+    assert(input_index >= 0 && input_index < INPUTS);
+
+    size_t length = strlen(value);
+    if (length >= MAX_INPUT_LENGTH) {
+        syslog(LOG_ALERT, "Unable to set value that is longer than max input length");
+        return;
+    }
+
+    INPUT *input = &inputs[input_index];
+    input->i = length - 1;
+
+    CLEAR_INPUT(*input);
+    strcpy(input->value, value);
+    mvwprintw(win, input->y, input->tx, input->value);
+}
+
+void load_username(void) {
+    void *value = load("username");
+    if (value == NULL) return;
+
+    selected_input = I_PASSWORD;
+    set_value(I_USERNAME, (char *) value);
+    free(value);
+}
+
 void open_ui(void) {
+    if (is_ui_opened) return;
+
     initscr();
     setlocale(LC_ALL, "C");
     keypad(stdscr, TRUE);
@@ -86,8 +116,12 @@ void open_ui(void) {
     inputs[1] = new_input("password", w_height - 3, H_PAD, w_width - H_PAD, 0, 1);
     inputs[0] = new_input("login", w_height - 5, H_PAD, w_width - H_PAD, inputs[1].tx, 0);
 
+    if (config.save_login == 1) load_username();
+
     wmove(win, inputs[selected_input].y, inputs[selected_input].tx);
     wrefresh(win);
+
+    is_ui_opened = 1;
 }
 
 void next_input(void) { selected_input = (selected_input + 1) % INPUTS; }
@@ -117,26 +151,11 @@ void delete_char(void) {
     input->i--;
 }
 
+int get_ch(void) { return getch(); }
+
 const char *get_value(int input) {
     assert(input >= 0 && input < INPUTS);
     return inputs[input].value;
-}
-
-void set_value(int input_index, char *value) {
-    assert(input_index >= 0 && input_index < INPUTS);
-
-    size_t length = strlen(value);
-    if (length >= MAX_INPUT_LENGTH) {
-        syslog(LOG_ALERT, "Unable to set value that is longer than max input length");
-        return;
-    }
-
-    INPUT *input = &inputs[input_index];
-    input->i = length - 1;
-
-    CLEAR_INPUT(*input);
-    strcpy(input->value, value);
-    mvwprintw(win, input->y, input->tx, input->value);
 }
 
 void hide_message(int sig) {
@@ -178,6 +197,16 @@ void refresh_window(void) {
 }
 
 void close_ui(void) {
+    if (!is_ui_opened) return;
+    is_ui_opened = 0;
+
     for (int i = 0; i < INPUTS; i++) free(inputs[i].value);
+
     endwin();
+    win = NULL;
+
+    // clear();
+    // refresh();
+
+    alarm(0);
 }
