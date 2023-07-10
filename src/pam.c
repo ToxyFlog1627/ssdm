@@ -5,12 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/syslog.h>
+#include <unistd.h>
 
-#define PAM_CLOSE()              \
-    pam_end(pam_handle, status); \
-    pam_handle = NULL;
+#define PAM_CLOSE()                  \
+    {                                \
+        pam_end(pam_handle, status); \
+        pam_handle = NULL;           \
+    }
 
-static pam_handle_t *pam_handle = NULL;
+pam_handle_t *pam_handle = NULL;
 
 int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res, void *appdata) {
     *res = calloc(num_msg, sizeof(struct pam_response));
@@ -44,19 +47,18 @@ int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res
 int pam_login(const char *username, const char *password) {
     assert(username != NULL && password != NULL && username[0] != '\0' && password[0] != '\0' && pam_handle == NULL);
 
-    int status;
     const char *data[2] = {username, password};
     struct pam_conv pam_conv = {conv, data};
 
-    status = pam_start("ssdm", username, &pam_conv, &pam_handle);
+    int status = pam_start("ssdm", NULL, &pam_conv, &pam_handle);
     if (status != PAM_SUCCESS) return AUTH_ERROR;
-    status = pam_authenticate(pam_handle, PAM_DISALLOW_NULL_AUTHTOK);
+    status = pam_authenticate(pam_handle, 0);
     if (status == PAM_AUTH_ERR || status == PAM_PERM_DENIED) {
         PAM_CLOSE();
         return AUTH_WRONG_CREDENTIALS;
     }
     if (status != PAM_SUCCESS) goto on_error;
-    status = pam_acct_mgmt(pam_handle, PAM_DISALLOW_NULL_AUTHTOK);
+    status = pam_acct_mgmt(pam_handle, 0);
     if (status != PAM_SUCCESS) goto on_error;
     status = pam_setcred(pam_handle, PAM_ESTABLISH_CRED);
     if (status != PAM_SUCCESS) goto on_error;
@@ -76,7 +78,9 @@ int pam_logout(void) {
     if (status != PAM_SUCCESS) goto on_error;
     status = pam_setcred(pam_handle, PAM_DELETE_CRED);
     if (status != PAM_SUCCESS) goto on_error;
-    PAM_CLOSE();
+    status = pam_end(pam_handle, status);
+    pam_handle = NULL;
+    if (status != PAM_SUCCESS) return AUTH_ERROR;
 
     return AUTH_SUCCESS;
 on_error:
@@ -90,7 +94,9 @@ void pam_init_env(void) {
     char **env = pam_getenvlist(pam_handle);
     if (env == NULL) {
         syslog(LOG_CRIT, "Unable to set PAM environment variables");
-    } else {
-        for (int i = 0; env[i]; i++) putenv(env[i]);
+        return;
     }
+
+    for (int i = 0; env[i] != NULL; i++) putenv(env[i]);
+    free(env);
 }
