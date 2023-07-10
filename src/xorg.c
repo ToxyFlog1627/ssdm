@@ -13,7 +13,7 @@
 #include <utmp.h>
 #include "config.h"
 
-#define MAX_COMMAND_LENGTH 256
+#define MAX_COMMAND_LENGTH 512
 #define XSETUP_PATH "/usr/share/ssdm/xsetup.sh"
 
 #define MAX_XAUTHORITY_PATH_LENGTH 255
@@ -117,7 +117,15 @@ void xorg(void) {
 
     setenv("XAUTHORITY", xauthority, 1);
     CREATE_FILE(xauthority, XAUTHORITY_FILE_PERMISSIONS);
-    EXEC_AND_WAIT("xauth add %s . $(mcookie)", ":0");
+    EXEC_AND_WAIT("xauth add :0 . $(mcookie)");
+
+    int null_fd = open("/dev/null", O_WRONLY);
+    if (null_fd == -1) {
+        syslog(LOG_ALERT, "Unable to open /dev/null!");
+    } else {
+        if (dup2(null_fd, STDOUT_FILENO) == -1) syslog(LOG_ALERT, "Unable to redirect Xorg's stdout to /dev/null!");
+        if (dup2(null_fd, STDERR_FILENO) == -1) syslog(LOG_ALERT, "Unable to redirect Xorg's stderr to /dev/null!");
+    }
 
     pid_t xorg_pid;
     EXEC(xorg_pid, "X :0 vt%s", ttyname(STDIN_FILENO) + strlen("/dev/tty"));

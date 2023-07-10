@@ -67,15 +67,12 @@ char try_to_login(const char *username, const char *password) {
 }
 
 void login(void) {
-    char *username = strdup(get_value(I_USERNAME));  // input values get cleaned on close_ui
-    if (!try_to_login(username, get_value(I_PASSWORD))) return;
-    if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"logout\" to run atexit");
-    pam_init_env();
+    if (!try_to_login(get_value(I_USERNAME), get_value(I_PASSWORD))) return;
+    if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"try_to_logout\" to run atexit");
 
-    close_ui();
-    start_xorg(username);
-    open_ui();
+    pam_init_env();
+    start_xorg(get_value(I_USERNAME));
+    clearenv();
 
     try_to_logout();
-    free(username);
 }

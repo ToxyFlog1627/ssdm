@@ -202,11 +202,6 @@ void close_ui(void) {
 
     for (int i = 0; i < INPUTS; i++) free(inputs[i].value);
 
-#ifndef DEBUG  // keep output that sometimes cleared when debugging
-    clear();
-    refresh();
-#endif
-
     endwin();
     win = NULL;
 
