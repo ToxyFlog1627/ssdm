@@ -67,7 +67,7 @@ char try_to_login(const char *username, const char *password) {
 }
 
 void login(void) {
-    const char *username = strdup(get_value(I_USERNAME));  // input values get cleaned on close_ui
+    char *username = strdup(get_value(I_USERNAME));  // input values get cleaned on close_ui
     if (!try_to_login(username, get_value(I_PASSWORD))) return;
     if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"logout\" to run atexit");
     pam_init_env();

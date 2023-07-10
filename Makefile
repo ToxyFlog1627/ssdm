@@ -29,6 +29,7 @@ init:
 .PHONY: install
 install: all
 	install -m 755 ssdm /usr/bin/ssdm
+	install -D -m 755 assets/xsetup.sh /usr/share/ssdm/xsetup.sh
 	install -m 644 assets/pam.conf /etc/pam.d/ssdm
 	install -m 644 assets/default.conf /etc/ssdm.conf
 

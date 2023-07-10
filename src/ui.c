@@ -102,9 +102,9 @@ void open_ui(void) {
     keypad(stdscr, TRUE);
     noecho();
 
+    clear();
     mvprintw(0, 0, SHUTDOWN_TEXT);
     mvprintw(0, strlen(SHUTDOWN_TEXT) + 2, REBOOT_TEXT);
-
     refresh();
 
     int w_width = clamp(COLS / 2, MIN_WIDTH, MAX_WIDTH), w_height = HEIGHT;
@@ -202,11 +202,13 @@ void close_ui(void) {
 
     for (int i = 0; i < INPUTS; i++) free(inputs[i].value);
 
+#ifndef DEBUG  // keep output that sometimes cleared when debugging
+    clear();
+    refresh();
+#endif
+
     endwin();
     win = NULL;
-
-    // clear();
-    // refresh();
 
     alarm(0);
 }
