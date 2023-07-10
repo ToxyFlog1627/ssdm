@@ -1,11 +1,13 @@
 CC = gcc
-CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic
+CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic -Wno-int-conversion
 LDFLAGS = -lncurses -ltinfo -lpam
+FILES = ui pam config store xorg
+OBJECTS = $(patsubst %, build/%.o, $(FILES))
 
 ifeq ($(DEBUG),1)
-	CFLAGS += -g3 -fsanitize=undefined -fstack-protector -DDEBUG
+	CFLAGS += -g3 -fsanitize={undefined,address,leak} -fstack-protector -DDEBUG
 else
-	CFLAGS += -DNDEBUG
+	CFLAGS += -s -DNDEBUG
 endif
 
 
@@ -13,7 +15,7 @@ endif
 all: init ssdm
 
 .PHONY: ssdm
-ssdm: build/ui.o build/pam.o build/config.o build/store.o build/xorg.o
+ssdm: $(OBJECTS)
 	$(CC) $(CFLAGS) src/main.c $^ -o $@ $(LDFLAGS)
 
 build/%.o: src/%.c
