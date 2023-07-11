@@ -1,11 +1,11 @@
 CC = gcc
-CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic -Wno-int-conversion
+CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic -Wno-int-conversion -Wno-int-to-pointer-cast
 LDFLAGS = -lncurses -ltinfo -lpam
 FILES = ui pam config store xorg login
 OBJECTS = $(patsubst %, build/%.o, $(FILES))
 
 ifeq ($(DEBUG),1)
-	CFLAGS += -g3 -fsanitize={undefined,address,leak} -fstack-protector -DDEBUG
+	CFLAGS += -g3 -fstack-protector -DDEBUG
 else
 	CFLAGS += -s -DNDEBUG
 endif

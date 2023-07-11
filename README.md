@@ -9,18 +9,19 @@ Tested on Gentoo with OpenRC and DWM
 
 ## Installation
 
-Requirements: ncurses, gmake, gcc, system logger
+Requirements: ncurses, gmake, gcc, system logger, PAM, loginctl(systemd/elogind)
 
 1. Clone - `git clone https://github.com/ToxyFlog1627/ssdm.git`
-2. Make - `sudo make clean install`
-3. Enable - it depends on distribution and/or init system \
+2. Make - `sudo make install` (`install` can be replaced with `installnoconf` if you don't want `/etc/ssdm.conf` to be overwritten)
+3. Enable - it depends on distribution and/or init system, basically invoke it on desired TTY by using `getty` \
 \
-On Gentoo edit `/etc/inittab`, go to sections saying `# TERMINALS` and choose tty on which you want it to open (usually 2nd) \
+On Gentoo edit `/etc/inittab`, go to sections saying `# TERMINALS` and choose TTY on which you want it to open \
 Then append `-nl /usr/bin/ssdm` after `/sbin/agetty`
 
 ## Configuration
 
-After going through installation, ssdm can be configured by editing values in `/etc/ssdm.conf`
+After installation, ssdm can be configured in `/etc/ssdm.conf` \
+All of the option and their default values are present in default config
 
 ## Debugging
 
@@ -29,4 +30,4 @@ Logs are kept at `/var/log/auth.log` (unless location of syslog for `LOG_AUTH` i
 
 ## Contributions
 
-Contributions and new features are welcome
+Contributions are welcome

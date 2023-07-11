@@ -14,20 +14,20 @@
 
 #define ERROR_FD -2
 
-int dir_fd = -1;
+static int dir_fd = -1;
 
-void open_store_dir(void) {
+static void open_store_dir(void) {
     dir_fd = open(STORE_DIR_PATH, O_RDONLY, O_DIRECTORY);
     if (dir_fd != -1) return;
 
     if (errno != ENOENT) {
-        syslog(LOG_CRIT, "Unable to open store directory %d", errno);
+        syslog(LOG_ALERT, "Unable to open store directory %d", errno);
         dir_fd = -2;
         return;
     }
 
     if (mkdir(STORE_DIR_PATH, STORE_DIR_PERMISSIONS) == -1) {
-        syslog(LOG_CRIT, "Unable to create store directory");
+        syslog(LOG_ALERT, "Unable to create store directory");
         dir_fd = -2;
         return;
     }
@@ -43,19 +43,19 @@ char store(const char *key, const void *value, size_t size) {
 
     int fd = openat(dir_fd, key, O_WRONLY | O_CREAT | O_TRUNC, STORE_FILE_PERMISSIONS);
     if (fd == -1) {
-        syslog(LOG_CRIT, "Unable to open file to store \"%s\"", key);
+        syslog(LOG_ALERT, "Unable to open file to store \"%s\"", key);
         dir_fd = -2;
         return -1;
     }
 
     if (write(fd, &size, sizeof(size)) == -1) {
-        syslog(LOG_CRIT, "Unable to store size of \"%s\"", key);
+        syslog(LOG_ALERT, "Unable to store size of \"%s\"", key);
         dir_fd = -2;
         return -1;
     }
 
     if (write(fd, value, size) == -1) {
-        syslog(LOG_CRIT, "Unable to store \"%s\"", key);
+        syslog(LOG_ALERT, "Unable to store \"%s\"", key);
         dir_fd = -2;
         return -1;
     }
@@ -74,19 +74,19 @@ void *load(const char *key) {
 
     size_t size;
     if (read(fd, &size, sizeof(size)) == -1) {
-        syslog(LOG_CRIT, "Unable to load size of \"%s\"", key);
+        syslog(LOG_ALERT, "Unable to load size of \"%s\"", key);
         dir_fd = -2;
         return NULL;
     }
 
     void *value = malloc(size);
     if (value == NULL) {
-        syslog(LOG_EMERG, "Bad malloc of \"%s\" during load", key);
+        syslog(LOG_ALERT, "Bad malloc of \"%s\" during load", key);
         exit(EXIT_FAILURE);
     }
 
     if (read(fd, value, size) == -1) {
-        syslog(LOG_CRIT, "Unable to load \"%s\"", key);
+        syslog(LOG_ALERT, "Unable to load \"%s\"", key);
         dir_fd = -2;
         return NULL;
     }

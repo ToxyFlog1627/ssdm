@@ -13,34 +13,37 @@
 
 #define MAX_RUNTIME_DIR_PATH_LENGTH 31
 
-void init_env(const char *username) {
+#define SETENV(var, value, overwrite) \
+    if (setenv(var, value, overwrite) == -1) syslog(LOG_ALERT, "Unable to set %s to \"%s\"", var, value);
+
+static void init_env(const char *username) {
     struct passwd *pwd = getpwnam(username);
 
-    if (getenv("TERM") == NULL) setenv("TERM", "linux", 1);
-    if (getenv("LANG") == NULL) setenv("LANG", "C", 1);
-    setenv("HOME", pwd->pw_dir, 1);
-    setenv("PWD", pwd->pw_dir, 1);
-    setenv("SHELL", pwd->pw_shell, 1);
-    setenv("USER", pwd->pw_name, 1);
-    setenv("LOGNAME", pwd->pw_name, 1);
-    setenv("DISPLAY", ":0", 1);
+    if (getenv("TERM") == NULL) SETENV("TERM", "linux", 1);
+    if (getenv("LANG") == NULL) SETENV("LANG", "C", 1);
+    SETENV("HOME", pwd->pw_dir, 1);
+    SETENV("PWD", pwd->pw_dir, 1);
+    SETENV("SHELL", pwd->pw_shell, 1);
+    SETENV("USER", pwd->pw_name, 1);
+    SETENV("LOGNAME", pwd->pw_name, 1);
+    SETENV("DISPLAY", ":0", 1);
 
     char runtime_dir_path[MAX_RUNTIME_DIR_PATH_LENGTH + 1];
-    snprintf(runtime_dir_path, MAX_RUNTIME_DIR_PATH_LENGTH, "/run/user/%d", getuid());
-    setenv("XDG_RUNTIME_DIR", runtime_dir_path, 0);
-    setenv("XDG_SESSION_CLASS", "user", 0);
-    setenv("XDG_SESSION_ID", "1", 0);
-    setenv("XDG_SESSION_DESKTOP", "xinitrc", 0);
-    setenv("XDG_SESSION_TYPE", "x11", 0);
-    setenv("XDG_SEAT", "seat0", 0);
-    setenv("XDG_VTNR", ttyname(STDIN_FILENO), 0);
+    if (snprintf(runtime_dir_path, MAX_RUNTIME_DIR_PATH_LENGTH, "/run/user/%d", pwd->pw_uid) < 0) syslog(LOG_ALERT, "Unable to concatenate runtime dir path");
+    else SETENV("XDG_RUNTIME_DIR", runtime_dir_path, 0);
+    SETENV("XDG_SESSION_CLASS", "user", 0);
+    SETENV("XDG_SESSION_ID", "1", 0);
+    SETENV("XDG_SESSION_DESKTOP", "xinitrc", 0);
+    SETENV("XDG_SESSION_TYPE", "x11", 0);
+    SETENV("XDG_SEAT", "seat0", 0);
+    SETENV("XDG_VTNR", ttyname(STDIN_FILENO), 0);
 }
 
-void try_to_logout(void) {
-    if (pam_logout() == AUTH_ERROR) syslog(LOG_CRIT, "PAM Authentication error at logout");
+static void try_to_logout(void) {
+    if (pam_logout() == AUTH_ERROR) syslog(LOG_ALERT, "PAM Authentication error at logout");
 }
 
-char try_to_login(const char *username, const char *password) {
+static char try_to_login(const char *username, const char *password) {
     clearenv();
     init_env(username);
 
@@ -61,8 +64,7 @@ char try_to_login(const char *username, const char *password) {
             syslog(LOG_ERR, "PAM Authentication error at login");
             break;
         default:
-            syslog(LOG_EMERG, "Unkown return value from login");
-            exit(EXIT_FAILURE);
+            syslog(LOG_ALERT, "Unkown return value from login");
             break;
     }
 
@@ -72,7 +74,7 @@ char try_to_login(const char *username, const char *password) {
 
 void login(void) {
     if (!try_to_login(get_value(I_USERNAME), get_value(I_PASSWORD))) return;
-    if (atexit(try_to_logout) != 0) syslog(LOG_CRIT, "Unable to register \"try_to_logout\" to run atexit");
+    if (atexit(try_to_logout) != 0) syslog(LOG_ALERT, "Unable to register \"try_to_logout\" to run atexit");
 
     pam_init_env();
     start_xorg(get_value(I_USERNAME));

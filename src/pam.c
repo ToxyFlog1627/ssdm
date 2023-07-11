@@ -7,25 +7,31 @@
 #include <sys/syslog.h>
 #include <unistd.h>
 
-#define PAM_CLOSE()                  \
-    {                                \
-        pam_end(pam_handle, status); \
-        pam_handle = NULL;           \
-    }
+static pam_handle_t *pam_handle = NULL;
+static int status = 0;
 
-pam_handle_t *pam_handle = NULL;
+static void pam_close() {
+    pam_end(pam_handle, status);
+    pam_handle = NULL;
+}
 
-int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res, void *appdata) {
+static int conv(int num_msg, const struct pam_message **msgs, struct pam_response **res, void *appdata) {
     *res = calloc(num_msg, sizeof(struct pam_response));
     if (*res == NULL) return PAM_BUF_ERR;
 
     for (int i = 0; i < num_msg; i++) {
         switch (msgs[i]->msg_style) {
             case PAM_PROMPT_ECHO_ON:
-                (*res)[i].resp = strdup(((char **) appdata)[0]);
+                if (((*res)[i].resp = strdup(((char **) appdata)[0])) == NULL) {
+                    syslog(LOG_EMERG, "Bad malloc of response value");
+                    exit(EXIT_FAILURE);
+                }
                 break;
             case PAM_PROMPT_ECHO_OFF:
-                (*res)[i].resp = strdup(((char **) appdata)[1]);
+                if (((*res)[i].resp = strdup(((char **) appdata)[1])) == NULL) {
+                    syslog(LOG_EMERG, "Bad malloc of response value");
+                    exit(EXIT_FAILURE);
+                }
                 break;
             case PAM_ERROR_MSG:
                 syslog(LOG_ERR, "PAM conv error message: \"%s\"", msgs[i]->msg);
@@ -53,9 +59,13 @@ int pam_login(const char *username, const char *password) {
     int status = pam_start("ssdm", NULL, &pam_conv, &pam_handle);
     if (status != PAM_SUCCESS) return AUTH_ERROR;
     status = pam_authenticate(pam_handle, 0);
-    if (status == PAM_AUTH_ERR || status == PAM_PERM_DENIED) {
-        PAM_CLOSE();
+    if (status == PAM_PERM_DENIED) {
+        pam_close();
         return AUTH_WRONG_CREDENTIALS;
+    }
+    if (status == PAM_AUTH_ERR) {
+        pam_close();
+        return AUTH_TOO_MANY_ATTEMPTS;
     }
     if (status != PAM_SUCCESS) goto on_error;
     status = pam_acct_mgmt(pam_handle, 0);
@@ -67,7 +77,7 @@ int pam_login(const char *username, const char *password) {
 
     return AUTH_SUCCESS;
 on_error:
-    PAM_CLOSE();
+    pam_close();
     return AUTH_ERROR;
 }
 
@@ -84,7 +94,7 @@ int pam_logout(void) {
 
     return AUTH_SUCCESS;
 on_error:
-    PAM_CLOSE();
+    pam_close();
     return AUTH_ERROR;
 }
 
@@ -93,7 +103,7 @@ void pam_init_env(void) {
 
     char **env = pam_getenvlist(pam_handle);
     if (env == NULL) {
-        syslog(LOG_CRIT, "Unable to set PAM environment variables");
+        syslog(LOG_ALERT, "Unable to set PAM environment variables");
         return;
     }
 

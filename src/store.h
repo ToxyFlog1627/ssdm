@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-char store(const char *key, const void *value, size_t size);
 void *load(const char *key);
+char store(const char *key, const void *value, size_t size);
 
 #endif  // STORE_H

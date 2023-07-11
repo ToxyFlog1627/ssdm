@@ -6,12 +6,12 @@
 #include "login.h"
 #include "ui.h"
 
-void signal_handler(int sig) {
+static void signal_handler(int sig) {
     (void) sig;
     exit(EXIT_SUCCESS);
 }
 
-void set_signal_handlers(void) {
+static void set_signal_handlers(void) {
     struct sigaction action;
     action.sa_handler = signal_handler;
     action.sa_flags = 0;
@@ -24,13 +24,13 @@ int main(void) {
     set_signal_handlers();
 
     openlog("ssdm", LOG_NDELAY, LOG_AUTH);
-    if (atexit(closelog) != 0) syslog(LOG_CRIT, "Unable to register \"closelog\" to run atexit");
+    if (atexit(closelog) != 0) syslog(LOG_ALERT, "Unable to register \"closelog\" to run atexit");
 
     load_config();
-    if (atexit(free_config) != 0) syslog(LOG_CRIT, "Unable to register \"free_config\" to run atexit");
+    if (atexit(free_config) != 0) syslog(LOG_ALERT, "Unable to register \"free_config\" to run atexit");
 
     open_ui();
-    if (atexit(close_ui) != 0) syslog(LOG_CRIT, "Unable to register \"close_ui\" to run atexit");
+    if (atexit(close_ui) != 0) syslog(LOG_ALERT, "Unable to register \"close_ui\" to run atexit");
 
     focus_tty();
 
@@ -53,10 +53,18 @@ int main(void) {
                 delete_char();
                 break;
             case SHUTDOWN_KEY:
-                if (system(config.shutdown_cmd) != 0) syslog(LOG_CRIT, "Unable to shutdown");
+                if (system(config.shutdown_cmd) != 0) {
+                    const char *message = "Unable to shutdown";
+                    syslog(LOG_CRIT, message);
+                    show_message(message);
+                }
                 exit(EXIT_SUCCESS);
             case REBOOT_KEY:
-                if (system(config.reboot_cmd) != 0) syslog(LOG_CRIT, "Unable to reboot");
+                if (system(config.reboot_cmd) != 0) {
+                    const char *message = "Unable to reboot";
+                    syslog(LOG_CRIT, message);
+                    show_message(message);
+                }
                 exit(EXIT_SUCCESS);
             case '\n':
             case KEY_ENTER:

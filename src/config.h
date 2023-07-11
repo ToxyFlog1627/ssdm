@@ -10,7 +10,7 @@ typedef struct config_t {
 
 extern config_t config;
 
-void load_config(void);
 void free_config(void);
+void load_config(void);
 
 #endif  // CONFIG_H

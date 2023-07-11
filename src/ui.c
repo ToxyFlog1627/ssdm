@@ -14,10 +14,6 @@
 #include "config.h"
 #include "store.h"
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#define max(x, y) ((x) > (y) ? (x) : (y))
-#define clamp(v, l, u) min(max(v, l), u)
-
 #define MIN_WIDTH 40
 #define MAX_WIDTH 60
 #define HEIGHT 10
@@ -30,14 +26,6 @@
 #define SHUTDOWN_TEXT "F1 shutdown"
 #define REBOOT_TEXT "F2 reboot"
 
-#define UPDATE_CARET_POSITION() wmove(win, inputs[selected_input].y, inputs[selected_input].tx + inputs[selected_input].i + 1)
-
-#define CLEAR_INPUT(input)                                                                  \
-    {                                                                                       \
-        memset((input).value, '\0', MAX_INPUT_LENGTH + 1);                                  \
-        mvwhline(win, (input).y, (input).tx, config.input_placeholder_char, (input).width); \
-    }
-
 typedef struct INPUT {
     int y, x, tx, width, i;
     const char *text;
@@ -45,12 +33,25 @@ typedef struct INPUT {
     char hide_input;
 } INPUT;
 
-INPUT inputs[INPUTS];
-int selected_input = 0;
-char is_ui_opened = 0;
-WINDOW *win;
+static INPUT inputs[INPUTS];
+static int selected_input = 0;
+static char is_ui_opened = 0;
+static WINDOW *win;
 
-INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hide_input) {
+static void update_caret() { wmove(win, inputs[selected_input].y, inputs[selected_input].tx + inputs[selected_input].i + 1); }
+
+static void clear_input_object(INPUT *input) {
+    memset(input->value, '\0', MAX_INPUT_LENGTH + 1);
+    mvwhline(win, input->y, input->tx, config.input_placeholder_char, input->width);
+}
+
+static int clamp(int value, int min, int max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
+
+static INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hide_input) {
     assert(text != NULL && text[0] != '\0' && y > 0 && x > 0 && (hide_input == 0 || hide_input == 1));
 
     int text_length = strlen(text) + 1;
@@ -65,30 +66,30 @@ INPUT new_input(const char *text, int y, int x, int total_width, int tx, char hi
     if (tx == 0) tx = x + text_length;
     INPUT input = {y, x, tx, total_width - tx, -1, text, value, hide_input};
 
-    CLEAR_INPUT(input);
+    clear_input_object(&input);
     mvwprintw(win, input.y, input.x, input.text);
 
     return input;
 }
 
-void set_value(int input_index, char *value) {
+static void set_value(int input_index, char *value) {
     assert(input_index >= 0 && input_index < INPUTS);
 
     size_t length = strlen(value);
     if (length >= MAX_INPUT_LENGTH) {
-        syslog(LOG_ALERT, "Unable to set value that is longer than max input length");
+        syslog(LOG_CRIT, "Unable to set value that is longer than max input length");
         return;
     }
 
     INPUT *input = &inputs[input_index];
     input->i = length - 1;
 
-    CLEAR_INPUT(*input);
+    clear_input_object(input);
     strcpy(input->value, value);
     mvwprintw(win, input->y, input->tx, input->value);
 }
 
-void load_username(void) {
+static void load_username(void) {
     void *value = load("username");
     if (value == NULL) return;
 
@@ -130,15 +131,20 @@ void open_ui(void) {
 void focus_tty(void) {
     FILE *console = fopen("/dev/console", "w");
     if (console == NULL) {
-        syslog(LOG_CRIT, "Unable to open /dev/console!");
+        syslog(LOG_ALERT, "Unable to open /dev/console!");
         return;
     }
 
     int fd = fileno(console);
-    int tty = strtol(ttyname(STDIN_FILENO) + strlen("/dev/tty"), NULL, 10);
+    char *tty_name = ttyname(STDIN_FILENO);
+    if (tty_name == NULL) {
+        syslog(LOG_ALERT, "Unable to get tty!");
+        return;
+    }
+    int tty = strtol(tty_name + strlen("/dev/tty"), NULL, 10);
 
-    if (ioctl(fd, VT_ACTIVATE, tty) == -1) syslog(LOG_CRIT, "Unable to focus tty!");
-    if (ioctl(fd, VT_WAITACTIVE, tty) == -1) syslog(LOG_CRIT, "Unable to wait for tty to get focused!");
+    if (ioctl(fd, VT_ACTIVATE, tty) == -1) syslog(LOG_ALERT, "Unable to focus tty!");
+    if (ioctl(fd, VT_WAITACTIVE, tty) == -1) syslog(LOG_ALERT, "Unable to wait for tty to get focused!");
 
     fclose(console);
 }
@@ -177,7 +183,7 @@ const char *get_value(int input) {
     return inputs[input].value;
 }
 
-void hide_message(int sig) {
+static void hide_message(int sig) {
     (void) sig;
     mvwhline(win, 3, 1, ' ', getmaxx(win) - 2);
     refresh_window();
@@ -196,7 +202,7 @@ void show_message(const char *text) {
     action.sa_flags = SA_RESETHAND;
     sigemptyset(&action.sa_mask);
     if (sigaction(SIGALRM, &action, NULL) == -1) {
-        syslog(LOG_CRIT, "Unable to set SIGALRM handler");
+        syslog(LOG_ALERT, "Unable to set SIGALRM handler");
         return;
     }
 
@@ -206,12 +212,12 @@ void show_message(const char *text) {
 void clear_input(int input) {
     assert(input >= 0 && input < INPUTS);
 
-    CLEAR_INPUT(inputs[input]);
+    clear_input_object(&inputs[input]);
     inputs[input].i = -1;
 }
 
 void refresh_window(void) {
-    UPDATE_CARET_POSITION();
+    update_caret();
     wrefresh(win);
 }
 
