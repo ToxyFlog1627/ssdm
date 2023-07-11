@@ -53,6 +53,10 @@ char try_to_login(const char *username, const char *password) {
             show_message("incorrect login/password");
             if (config.erase_password_on_failure) clear_input(I_PASSWORD);
             break;
+        case AUTH_TOO_MANY_ATTEMPTS:
+            show_message("too many failed attempts, try later");
+            if (config.erase_password_on_failure) clear_input(I_PASSWORD);
+            break;
         case AUTH_ERROR:
             syslog(LOG_ERR, "PAM Authentication error at login");
             break;
