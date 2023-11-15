@@ -34,10 +34,15 @@ installnoconf: all
 	install -m 755 ssdm /usr/bin/ssdm
 	install -D -m 755 assets/xsetup.sh /usr/share/ssdm/xsetup.sh
 	install -m 644 assets/pam.conf /etc/pam.d/ssdm
+	install -m 644 assets/ssdm.service /usr/lib/systemd/system/ssdm.service
 
 .PHONY: installconf
 installconf: all
 	install -m 644 assets/default.conf /etc/ssdm.conf
+
+.PHONY: uninstall
+uninstall:
+	rm /usr/bin/ssdm /etc/pam.d/ssdm /usr/lib/systemd/system/ssdm.service
 
 .PHONY: clean
 clean:
