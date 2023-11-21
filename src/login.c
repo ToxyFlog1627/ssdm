@@ -76,6 +76,7 @@ void login(void) {
     if (!try_to_login(get_value(I_USERNAME), get_value(I_PASSWORD))) return;
     if (atexit(try_to_logout) != 0) syslog(LOG_ALERT, "Unable to register \"try_to_logout\" to run atexit");
 
+    alarm(0);
     pam_init_env();
     start_xorg(get_value(I_USERNAME));
     clearenv();

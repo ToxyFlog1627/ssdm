@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O2 -std=c17 -Wall -Wextra -pedantic -Wno-int-conversion -Wno-int-to-pointer-cast
-LDFLAGS = -lncurses -ltinfo -lpam
+LDFLAGS = -lncurses -ltinfo -lpam -lxcb
 FILES = ui pam config store xorg login
 OBJECTS = $(patsubst %, build/%.o, $(FILES))
 

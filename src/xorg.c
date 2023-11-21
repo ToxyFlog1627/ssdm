@@ -1,5 +1,6 @@
 #define _DEFAULT_SOURCE
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <grp.h>
 #include <pwd.h>
@@ -11,6 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <utmp.h>
+#include <xcb/xcb.h>
 #include "config.h"
 
 #define MAX_COMMAND_LENGTH 512
@@ -39,7 +41,6 @@
         }                                                                                             \
     }
 
-static char* tty;
 static struct passwd* pwd;
 
 static pid_t exec(char* command) {
@@ -64,7 +65,7 @@ static void create_file(char* path, int permissions) {
     }
 }
 
-static void add_utmp_entry(void) {
+static void add_utmp_entry(const char* tty) {
     struct utmp entry;
     entry.ut_type = USER_PROCESS;
     entry.ut_pid = getpid();
@@ -99,7 +100,17 @@ static void delete_utmp_entry(void) {
     endutent();
 }
 
-static void xorg(void) {
+static xcb_connection_t* wait_for_xorg(pid_t xorg_pid) {
+    while (1) {
+        xcb_connection_t* connection = xcb_connect(NULL, NULL);
+        if (!xcb_connection_has_error(connection)) return connection;
+
+        kill(xorg_pid, 0);
+        if (errno == ESRCH) return NULL;
+    }
+}
+
+static void xorg(const char* tty) {
     if (chdir(pwd->pw_dir) == -1) {
         syslog(LOG_ALERT, "Unable to change directory to \"%s\"", pwd->pw_dir);
         _exit(EXIT_FAILURE);
@@ -137,6 +148,13 @@ static void xorg(void) {
 
     MAKE_COMMAND(xorg_command, "X :0 vt%s", tty + strlen("/dev/tty"));
     pid_t xorg_pid = exec(xorg_command);
+
+    xcb_connection_t* connection = wait_for_xorg(xorg_pid);
+    if (connection == NULL) {
+        syslog(LOG_ALERT, "Unable to connect to Xorg (using Xcb).");
+        _exit(EXIT_FAILURE);
+    }
+
     MAKE_COMMAND(xinitrc_command, "%s ~/.xinitrc", XSETUP_PATH);
     pid_t xinitrc_pid = exec(xinitrc_command);
 
@@ -144,7 +162,9 @@ static void xorg(void) {
     waitpid(xinitrc_pid, &status, 0);
     if (status != 0) syslog(LOG_ERR, "Xinitrc exited with error code");
 
+    xcb_disconnect(connection);
     kill(xorg_pid, SIGTERM);
+    waitpid(xorg_pid, &status, 0);
 
     SYSTEM("xauth remove :0");
     if (remove(xauthority) == -1) syslog(LOG_ALERT, "Unable to delete file \"%s\"", xauthority);
@@ -154,7 +174,7 @@ static void xorg(void) {
 void start_xorg(const char* username) {
     assert(username != NULL && username[0] != '\0');
 
-    tty = ttyname(STDIN_FILENO);
+    char* tty = ttyname(STDIN_FILENO);
     if (tty == NULL) {
         syslog(LOG_EMERG, "Unable to get tty");
         exit(EXIT_FAILURE);
@@ -168,14 +188,14 @@ void start_xorg(const char* username) {
     assert(pwd->pw_shell != NULL && *pwd->pw_shell != '\0');
     endpwent();
 
-    add_utmp_entry();
+    add_utmp_entry(tty);
 
     pid_t pid = fork();
     if (pid == -1) {
         syslog(LOG_EMERG, "Unable to fork in order to start xorg");
         exit(EXIT_FAILURE);
     }
-    if (pid == 0) xorg();
+    if (pid == 0) xorg(tty);
 
     int status;
     waitpid(pid, &status, 0);
