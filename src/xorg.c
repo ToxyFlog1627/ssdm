@@ -168,17 +168,18 @@ void start_xorg(const char* username) {
     assert(pwd->pw_shell != NULL && *pwd->pw_shell != '\0');
     endpwent();
 
+    add_utmp_entry();
+
     pid_t pid = fork();
     if (pid == -1) {
         syslog(LOG_EMERG, "Unable to fork in order to start xorg");
         exit(EXIT_FAILURE);
     }
-
-    add_utmp_entry();
     if (pid == 0) xorg();
 
     int status;
     waitpid(pid, &status, 0);
     if (status != 0) syslog(LOG_ERR, "Xorg-launching process exited with error code = %d", status);
+
     delete_utmp_entry();
 }

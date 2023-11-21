@@ -81,5 +81,5 @@ void login(void) {
     clearenv();
 
     try_to_logout();
-    if (system("loginctl terminate-session self") == -1) syslog(LOG_ALERT, "Unable to terminate elogind session!");
+    if (system("loginctl terminate-session self") == -1) syslog(LOG_ALERT, "Unable to terminate session!");
 }

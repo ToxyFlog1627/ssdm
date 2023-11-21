@@ -12,6 +12,7 @@ Requirements: ncurses, gmake, gcc, system logger, PAM
 1. Clone - `git clone https://github.com/ToxyFlog1627/ssdm.git`
 2. Make - `sudo make install` (or `installnoconf` not to overwrite config)
 3. Enable - `sudo systemctl enable ssdm.service`
+4. (optional) If getty/login takes over tty, run `sudo systemctl mask getty@tty2` 
 
 ## Configuration
 
