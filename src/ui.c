@@ -14,6 +14,8 @@
 #include "config.h"
 #include "store.h"
 
+#define HOSTNAME_LENGTH 256
+
 #define MIN_WIDTH 40
 #define MAX_WIDTH 60
 #define HEIGHT 10
@@ -22,9 +24,8 @@
 #define MAX_INPUT_LENGTH 512
 #define INPUTS 2
 
-#define TITLE "ssdm"
-#define SHUTDOWN_TEXT "F1 shutdown"
-#define REBOOT_TEXT "F2 reboot"
+static const char *SHUTDOWN_TEXT = "F1 shutdown";
+static const char *REBOOT_TEXT = "F2 reboot";
 
 typedef struct INPUT {
     int y, x, tx, width, i;
@@ -115,7 +116,9 @@ void open_ui(void) {
     win = newwin(w_height, w_width, (LINES - w_height) / 2, (COLS - w_width) / 2);
     box(win, 0, 0);
 
-    mvwprintw(win, 1, (w_width - strlen(TITLE)) / 2, TITLE);
+    char hostname[HOSTNAME_LENGTH];
+    gethostname(hostname, HOSTNAME_LENGTH);
+    mvwprintw(win, 1, (w_width - strlen(hostname)) / 2, hostname);
 
     inputs[1] = new_input("password", w_height - 3, H_PAD, w_width - H_PAD, 0, 1);
     inputs[0] = new_input("login", w_height - 5, H_PAD, w_width - H_PAD, inputs[1].tx, 0);
